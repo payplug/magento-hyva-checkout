@@ -15,13 +15,6 @@ apple-pay-button {
     }
 }
 
-/* Cart summary */
-.checkout-methods-items {
-    apple-pay-button {
-        @apply w-full;
-    }
-}
-
 /* Checkout item */
 #payment-method-view-payplug_payments_apple_pay {
     @apply text-center;

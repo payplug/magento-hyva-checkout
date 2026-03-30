@@ -7,17 +7,12 @@
 
 declare(strict_types=1);
 
-namespace Hyva\CheckoutPayplug\Magewire;
+namespace Payplug\PaymentsHyvaCheckout\Magewire;
 
 use Hyva\Checkout\Magewire\Main;
 
 class Oney extends Main
 {
-    /**
-     *
-     * @param string $oney_type
-     * @return void
-     */
     public function setOneyType($oney_type)
     {
         $quote = $this->sessionCheckout->getQuote();

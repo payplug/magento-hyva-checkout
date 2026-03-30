@@ -8,7 +8,7 @@
 declare(strict_types=1);
 
 use Hyva\Theme\Model\ViewModelRegistry;
-use Hyva\CheckoutPayplug\ViewModel\PayplugIcons;
+use Payplug\PaymentsHyvaCheckout\ViewModel\PayplugIcons;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
 use Payplug\Payments\Block\Oney\Simulation;
@@ -16,7 +16,6 @@ use Magento\Framework\Pricing\Helper\Data;
 use Payplug\Payments\Gateway\Config\OneyWithoutFees;
 
 /** @var Escaper $escaper */
-/** @var PayplugIcons $viewModels */
 /** @var Simulation $block */
 /** @var Template $block */
 /** @var ViewModelRegistry $viewModels */

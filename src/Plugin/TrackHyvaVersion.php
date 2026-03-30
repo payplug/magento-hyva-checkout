@@ -7,17 +7,15 @@
 
 declare(strict_types=1);
 
-namespace Hyva\CheckoutPayplug\Plugin;
+namespace Payplug\PaymentsHyvaCheckout\Plugin;
 
-use Hyva\CheckoutPayplug\Provider\Config as PayplugHyvaConfig;
+use Payplug\PaymentsHyvaCheckout\Provider\Config as PayplugHyvaConfig;
 use Payplug\Payments\Helper\Config;
-use Psr\Log\LoggerInterface;
 
 class TrackHyvaVersion
 {
     public function __construct(
-        protected PayplugHyvaConfig $payplugHyvaConfig,
-        protected LoggerInterface $logger
+        protected PayplugHyvaConfig $payplugHyvaConfig
     ) {
     }
 

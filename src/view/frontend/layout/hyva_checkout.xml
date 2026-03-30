@@ -50,13 +50,5 @@
                    template="Hyva_CheckoutPayplug::checkout/payment/method/js/payplug.phtml"
             />
         </referenceContainer>
-        <referenceContainer name="magewire.plugin.scripts">
-            <block name="oney.simulation"
-                   template="Hyva_CheckoutPayplug::oney/simulation-csp-js.phtml"
-            />
-            <block name="oney.simulation_content"
-                   template="Hyva_CheckoutPayplug::oney/simulation_content-csp-js.phtml"
-            />
-        </referenceContainer>
     </body>
 </page>
