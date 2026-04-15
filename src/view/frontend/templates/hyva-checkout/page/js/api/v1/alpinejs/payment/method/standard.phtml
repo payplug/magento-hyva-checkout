@@ -7,13 +7,19 @@
 
 declare(strict_types=1);
 
+use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use Payplug\Payments\ViewModel\UrlProvider;
 
-/** @var Template $block */
 /** @var Escaper $escaper */
 /** @var HyvaCsp $hyvaCsp */
+/** @var Template $block */
+/** @var UrlProvider $urlProvider */
+
+$urlProvider = $viewModels->require(UrlProvider::class);
+$integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js';
 ?>
 
 <script>
@@ -144,7 +150,7 @@ use Magento\Framework\View\Element\Template;
                         return new Promise(resolve => {
                             const script = document.createElement('script');
                             script.type = 'text/javascript';
-                            script.src =  '<?= $escaper->escapeJs('https://cdn.payplug.com/js/integrated-payment/v1@1/index.js') ?>';
+                            script.src =  '<?= $escaper->escapeJs($integratedPaymentUrl) ?>';
                             script.async = true;
                             script.onload = resolve;
                             document.head.appendChild(script);
@@ -281,6 +287,7 @@ use Magento\Framework\View\Element\Template;
         });
     })();
 </script>
+
 <?php $hyvaCsp->registerInlineScript() ?>
 
 <script>
@@ -303,4 +310,5 @@ use Magento\Framework\View\Element\Template;
         Alpine.data('integratedStandardPayment', integratedStandardPayment);
     }, {once: true});
 </script>
+
 <?php $hyvaCsp->registerInlineScript() ?>

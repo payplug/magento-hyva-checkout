@@ -8,18 +8,21 @@
 declare(strict_types=1);
 
 use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
-use Payplug\Payments\Block\Formjs;
+use Payplug\Payments\ViewModel\UrlProvider;
 
 /** @var Escaper $escaper */
-/** @var Formjs $block */
+/** @var HyvaCsp $hyvaCsp */
 /** @var Template $block */
-/** @var ViewModelRegistry $viewModels */
+/** @var UrlProvider $urlProvider */
+
+$urlProvider = $viewModels->require(UrlProvider::class);
 ?>
 
 <script>
-    window.PAYPLUG_DOMAIN = '<?= $escaper->escapeJs($block->getPayplugSecureUrl()) ?>';
+    window.PAYPLUG_DOMAIN = '<?= $escaper->escapeJs($urlProvider->getPayplugSecureUrl()) ?>';
 
     (() => {
         window.addEventListener('checkout:payment:method-activate', (event) => {
