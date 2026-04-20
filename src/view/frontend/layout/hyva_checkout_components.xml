@@ -146,6 +146,63 @@
                     </argument>
                 </arguments>
             </block>
+
+            <block name="checkout.payment.method.payplug_payments_bizum"
+                   as="payplug_payments_bizum"
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/ppro.phtml">
+                <arguments>
+                    <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Ppro</argument>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">Payplug_Payments::images/logos/bizum.svg</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="width" xsi:type="number">122</item>
+                                <item name="height" xsi:type="number">36</item>
+                                <item name="loading" xsi:type="string">lazy</item>
+                                <item name="alt" xsi:type="string">Bizum</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+
+            <block name="checkout.payment.method.payplug_payments_scalapay"
+                   as="payplug_payments_scalapay"
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/ppro.phtml">
+                <arguments>
+                    <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Ppro</argument>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">Payplug_Payments::images/logos/scalapay.svg</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="width" xsi:type="number">132</item>
+                                <item name="height" xsi:type="number">36</item>
+                                <item name="loading" xsi:type="string">lazy</item>
+                                <item name="alt" xsi:type="string">Scalapay</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+
+            <block name="checkout.payment.method.payplug_payments_wero"
+                   as="payplug_payments_wero"
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/ppro.phtml">
+                <arguments>
+                    <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Ppro</argument>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">Payplug_Payments::images/logos/wero.svg</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="width" xsi:type="number">130</item>
+                                <item name="height" xsi:type="number">36</item>
+                                <item name="loading" xsi:type="string">lazy</item>
+                                <item name="alt" xsi:type="string">Wero</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
         </referenceBlock>
     </body>
 </page>
