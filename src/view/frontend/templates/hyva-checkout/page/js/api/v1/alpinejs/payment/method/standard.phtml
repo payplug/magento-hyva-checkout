@@ -19,6 +19,7 @@ use Payplug\Payments\ViewModel\UrlProvider;
 /** @var UrlProvider $urlProvider */
 
 $urlProvider = $viewModels->require(UrlProvider::class);
+$integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js';
 ?>
 
 <script>
@@ -149,7 +150,7 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                         return new Promise(resolve => {
                             const script = document.createElement('script');
                             script.type = 'text/javascript';
-                            script.src =  '<?= $escaper->escapeJs($urlProvider->getPayplugIntegratedPaymentJsUrl()) ?>';
+                            script.src =  '<?= $escaper->escapeJs($integratedPaymentUrl) ?>';
                             script.async = true;
                             script.onload = resolve;
                             document.head.appendChild(script);
@@ -286,6 +287,7 @@ $urlProvider = $viewModels->require(UrlProvider::class);
         });
     })();
 </script>
+
 <?php $hyvaCsp->registerInlineScript() ?>
 
 <script>
@@ -308,4 +310,5 @@ $urlProvider = $viewModels->require(UrlProvider::class);
         Alpine.data('integratedStandardPayment', integratedStandardPayment);
     }, {once: true});
 </script>
+
 <?php $hyvaCsp->registerInlineScript() ?>
