@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Hyva\CheckoutPayplug\Magewire;
+namespace Payplug\PaymentsHyvaCheckout\Magewire;
 
 use Hyva\Checkout\Magewire\Main;
 

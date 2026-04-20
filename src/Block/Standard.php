@@ -5,7 +5,7 @@
  * See LICENSE for license details.
  */
 
-namespace Hyva\CheckoutPayplug\Block;
+namespace Payplug\PaymentsHyvaCheckout\Block;
 
 use Magento\Customer\Model\Session;
 use Magento\Framework\Locale\ResolverInterface;
@@ -18,7 +18,7 @@ use Payplug\Payments\Model\Payment\Standard\ConfigProvider as Config;
 class Standard extends Template
 {
     public function __construct(
-        private Context $context,
+        Context $context,
         private Session $customerSession,
         private Card $helper,
         private Config $config,

@@ -7,34 +7,23 @@
 
 declare(strict_types=1);
 
-namespace Hyva\CheckoutPayplug\Model\Magewire\Payment;
+namespace Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment;
 
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
 use Hyva\Checkout\Model\Magewire\Payment\AbstractPlaceOrderService;
-use Magento\Framework\App\Action\Context;
-use Magento\Framework\Controller\ResultFactory;
 use Magento\Quote\Api\CartManagementInterface;
 use Magento\Quote\Model\Quote;
-use Magento\Payment\Helper\Data as PaymentHelper;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Payplug\Payments\Helper\Config;
 
 class DeferPlaceOrderService extends AbstractPlaceOrderService
 {
-    /**
-     * @var ResultFactory
-     */
-    protected $resultFactory;
-    protected $orderId = null;
-    protected $quote = null;
     protected $oneclick = false;
 
     public function __construct(
         protected CartManagementInterface $cartManagement,
-        protected PaymentHelper $paymentHelper,
         protected OrderRepositoryInterface $orderRepository,
-        protected Context $context,
         protected Config $payplugConfig
     ) {
         parent::__construct($cartManagement);
@@ -42,8 +31,6 @@ class DeferPlaceOrderService extends AbstractPlaceOrderService
 
     public function getRedirectUrl(Quote $quote, ?int $orderId = null): string
     {
-        $paymentMethod = $this->paymentHelper->getMethodInstance($quote->getPayment()->getMethod());
-
         $order = $this->orderRepository->get($orderId);
 
         $checkoutUrl = $order->getPayment()->getAdditionalInformation('payment_url');

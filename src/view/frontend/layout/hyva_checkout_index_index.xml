@@ -11,13 +11,13 @@
     <body>
         <referenceContainer name="hyva.checkout.api-v1.payment-methods">
             <block name="hyva.checkout.alpinejs.payplug-apple-pay"
-                   template="Hyva_CheckoutPayplug::hyva-checkout/page/js/api/v1/alpinejs/payment/method/apple-pay.phtml"/>
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/apple-pay.phtml"/>
             <block name="hyva.checkout.alpinejs.payplug-oney"
-                   template="Hyva_CheckoutPayplug::hyva-checkout/page/js/api/v1/alpinejs/payment/method/oney.phtml"/>
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/oney.phtml"/>
             <block name="hyva.checkout.alpinejs.payplug-ppro"
-                   template="Hyva_CheckoutPayplug::hyva-checkout/page/js/api/v1/alpinejs/payment/method/ppro.phtml"/>
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/ppro.phtml"/>
             <block name="hyva.checkout.alpinejs.payplug-standard"
-                   template="Hyva_CheckoutPayplug::hyva-checkout/page/js/api/v1/alpinejs/payment/method/standard.phtml"/>
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/standard.phtml"/>
         </referenceContainer>
     </body>
 </page>
