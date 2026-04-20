@@ -7,26 +7,17 @@
 
 declare(strict_types=1);
 
-namespace Hyva\CheckoutPayplug\Magewire;
+namespace Payplug\PaymentsHyvaCheckout\Magewire;
 
 use Hyva\Checkout\Magewire\Main;
 
 class Standard extends Main
 {
-
-  /**
-  *
-  * @param string $card_id
-  * @return void
-  */
-  public function setAditionalData($card_id)
-  {
-    $quote = $this->sessionCheckout->getQuote();
-    $quote->getPayment()->setAdditionalInformation('payplug_payments_customer_card_id', $card_id);
-    $quote->getPayment()->save();
-
-  }
-
-
-
+    public function setAditionalData($card_id)
+    {
+        $quote = $this->sessionCheckout->getQuote();
+        $quote->getPayment()->setAdditionalInformation('payplug_payments_customer_card_id', $card_id);
+        $quote->getPayment()->save();
+    }
 }
+
