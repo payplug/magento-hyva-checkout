@@ -24,7 +24,7 @@ use Magento\Framework\View\Element\Template;
             let btnPlaceOrder;
             let isAvailable = true;
             let message = '';
-            const pproPayments = ['ideal', 'mybank', 'satispay']; // To be dynamized later
+            const pproPayments = ['bizum', 'ideal', 'mybank', 'satispay', 'scalapay', 'wero']; // To be dynamized later
 
             pproPayments.forEach((method) => {
                 hyvaCheckout.payment.registerMethod({
