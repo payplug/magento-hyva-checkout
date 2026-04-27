@@ -44,9 +44,9 @@
             </block>
         </referenceBlock>
 
-        <referenceBlock 
-            name="payplug_payments_formjs"
-            template="Payplug_PaymentsHyvaCheckout::checkout/payment/method/js/payplug.phtml"
-        />
+        <referenceContainer name="before.body.end">
+            <block name="payplug-payments-script"
+                   template="Payplug_PaymentsHyvaCheckout::checkout/payment/method/js/payplug.phtml" />
+        </referenceContainer>
     </body>
 </page>
