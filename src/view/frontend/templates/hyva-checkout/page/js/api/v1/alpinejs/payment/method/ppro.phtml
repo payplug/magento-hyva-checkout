@@ -21,13 +21,16 @@ use Magento\Framework\View\Element\Template;
 <script>
     (() => {
         hyvaCheckout.api.after(() => {
+            const btnPlaceOrder = document.querySelector('.btn-place-order');
             const pproPayments = ['bizum', 'ideal', 'mybank', 'satispay', 'scalapay', 'wero']; // To be dynamized later
 
             pproPayments.forEach((method) => {
                 hyvaCheckout.payment.registerMethod({
                     code: `payplug_payments_${method}`,
                     method: {
-                        validate: async function() {
+                        isAvailable: true,
+                        message: '',
+                        initialize: async function() {
                             const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
 
                             return new Promise(resolve => {
@@ -59,10 +62,18 @@ use Magento\Framework\View\Element\Template;
 
                                     const res = await response.json();
                                     
-                                    if (res.data?.message) {
+                                    if (res.data?.message === null) {
+                                        return;
+                                    }
+
+                                    this.message = res.data?.message;
+
+                                    if (this.message) {
                                         const messageEl = document.getElementById('message');
                                         if (messageEl) {
-                                            messageEl.textContent = res.data.message;
+                                            messageEl.textContent = this.message;
+                                            this.disablePlaceOrderBtn();
+                                            this.isAvailable = false;
                                         }
                                     }
                                 } catch (error) {
