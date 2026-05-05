@@ -35,9 +35,6 @@
                 <item name="payplug_payments_bancontact" xsi:type="object">
                     Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
                 </item>
-                <item name="payplug_payments_sofort" xsi:type="object">
-                    Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
-                </item>
                 <item name="payplug_payments_satispay" xsi:type="object">
                     Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
                 </item>
@@ -46,9 +43,6 @@
                 </item>
                 <item name="payplug_payments_apple_pay" xsi:type="object">
                     Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\ApplepayPlaceOrderService
-                </item>
-                <item name="payplug_payments_giropay" xsi:type="object">
-                    Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
                 </item>
                 <item name="payplug_payments_ideal" xsi:type="object">
                     Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
@@ -60,6 +54,15 @@
                     Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
                 </item>
                 <item name="payplug_payments_ondemand" xsi:type="object">
+                    Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
+                </item>
+                <item name="payplug_payments_bizum" xsi:type="object">
+                    Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
+                </item>
+                <item name="payplug_payments_scalapay" xsi:type="object">
+                    Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
+                </item>
+                <item name="payplug_payments_wero" xsi:type="object">
                     Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\PlaceOrderService
                 </item>
             </argument>
