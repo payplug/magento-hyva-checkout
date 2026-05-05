@@ -21,7 +21,7 @@ use Magento\Framework\View\Element\Template;
 <script>
     (() => {
         hyvaCheckout.api.after(() => {
-            const btnPlaceOrder = document.querySelector('.btn-place-order');
+            let btnPlaceOrder;
             const pproPayments = ['bizum', 'ideal', 'mybank', 'satispay', 'scalapay', 'wero']; // To be dynamized later
 
             pproPayments.forEach((method) => {
@@ -52,6 +52,10 @@ use Magento\Framework\View\Element\Template;
                                             'Accept': 'application/json'
                                         }
                                     });
+
+                                    if (!btnPlaceOrder) {
+                                        btnPlaceOrder = document.querySelector('.btn-place-order');
+                                    }
 
                                     if (!response.ok) {
                                         throw new Error(`HTTP error ${response.status}`);
