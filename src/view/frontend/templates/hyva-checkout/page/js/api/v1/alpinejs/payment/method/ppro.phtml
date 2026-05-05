@@ -56,7 +56,6 @@ use Magento\Framework\View\Element\Template;
                                     }
 
                                     resolve(true);
-                                    window.location.replace(redirectUrl);
 
                                     const res = await response.json();
                                     
@@ -73,9 +72,11 @@ use Magento\Framework\View\Element\Template;
                         }
                     }
                 });
+                });
             });
         });
     })();
 </script>
+
 
 <?php $hyvaCsp->registerInlineScript() ?>
