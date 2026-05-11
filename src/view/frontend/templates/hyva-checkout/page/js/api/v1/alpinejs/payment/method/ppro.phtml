@@ -33,8 +33,7 @@ use Magento\Framework\View\Element\Template;
                         initialize: async function() {
                             const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
 
-                            return new Promise(resolve => {
-                                const pproPaymentData = document.getElementById('pp-ppro-payment').dataset;
+                            const pproPaymentData = document.getElementById('pp-ppro-payment').dataset;
                                 const data = {
                                     'billingCountry': pproPaymentData.billingCountryId,
                                     'shippingCountry': pproPaymentData.shippingCountryId,
@@ -58,8 +57,6 @@ use Magento\Framework\View\Element\Template;
                                         throw new Error(`HTTP error ${response.status}`);
                                     }
 
-                                    resolve(true);
-
                                     const res = await response.json();
                                     
                                     if (res.data?.message === null) {
@@ -70,6 +67,7 @@ use Magento\Framework\View\Element\Template;
 
                                     if (this.message) {
                                         const messageEl = document.getElementById('message');
+
                                         if (messageEl) {
                                             messageEl.textContent = this.message;
                                             this.disablePlaceOrderBtn();
@@ -78,6 +76,29 @@ use Magento\Framework\View\Element\Template;
                                     }
                                 } catch (error) {
                                     console.error('Error:', error);
+                                }
+                        },
+                        uninitialize: async function () {
+                            this.enablePlaceOrderBtn();
+                        },
+                        disablePlaceOrderBtn() {
+                            if (btnPlaceOrder) {
+                                btnPlaceOrder.disabled = true;
+                            }
+                        },
+                        enablePlaceOrderBtn() {
+                            if (btnPlaceOrder) {
+                                btnPlaceOrder.disabled = false;
+                            }
+                        },
+                        validate: function() {
+                            return new Promise((resolve) => {
+                                if (this.isAvailable) {
+                                    resolve(true);
+                                } else {
+                                    const text = message ?? '';
+                                    hyvaCheckout.message.dialog(text);
+                                    resolve(false);
                                 }
                             });
                         }
