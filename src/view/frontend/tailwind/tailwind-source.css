@@ -5,6 +5,7 @@
  */
 
 @import "./components/apple-pay.css";
+@import "./components/checkout.css";
 @import "./components/oney.css";
 @import "./components/standard.css";
 
