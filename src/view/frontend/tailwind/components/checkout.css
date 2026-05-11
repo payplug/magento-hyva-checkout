@@ -9,3 +9,15 @@
         @apply min-h-16;
     }
 }
+
+[id*="payment-method-view-payplug_payments_"] {
+    @apply p-0 m-0;
+
+    #message {
+        @apply pl-11 pr-4;
+
+        &:not(:empty) {
+            @apply pb-4;
+        }
+    }
+}
