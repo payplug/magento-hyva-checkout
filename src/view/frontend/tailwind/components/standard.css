@@ -14,7 +14,7 @@
 }
 
 .pp-integrated-payment {
-    @apply block justify-between w-[300px] mb-0;
+    @apply block justify-between w-[300px] mb-0 pl-11 pb-4 pr-4;
 
     .exp-cvv-container {
         @apply flex gap-3 justify-between mt-3;
