@@ -5,7 +5,7 @@
  */
 
 [id*="payment-method-option-"] {
-    label {
+    > label {
         @apply min-h-16;
     }
 }

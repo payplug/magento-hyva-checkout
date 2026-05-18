@@ -13,7 +13,7 @@
 }
 
 .oney-payment {
-    @apply relative pt-[90px] md:flex md:gap-4 md:justify-between md:pt-0 md:overflow-hidden;
+    @apply relative md:flex md:gap-4 md:justify-between md:overflow-hidden pl-11 pb-4 pr-4;
 
     .field {
         @apply flex-1 mt-0;
