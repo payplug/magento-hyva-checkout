@@ -40,8 +40,8 @@
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">Payplug_Payments::images/logos/oney_3x_4x.svg</item>
                             <item name="attributes" xsi:type="array">
-                                <item name="width" xsi:type="number">136</item>
-                                <item name="height" xsi:type="number">28</item>
+                                <item name="width" xsi:type="number">120</item>
+                                <item name="height" xsi:type="number">25</item>
                                 <item name="loading" xsi:type="string">lazy</item>
                                 <item name="alt" xsi:type="string">Oney</item>
                             </item>
@@ -60,8 +60,8 @@
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">Payplug_Payments::images/logos/oney_3x_4x.svg</item>
                             <item name="attributes" xsi:type="array">
-                                <item name="width" xsi:type="number">136</item>
-                                <item name="height" xsi:type="number">28</item>
+                                <item name="width" xsi:type="number">120</item>
+                                <item name="height" xsi:type="number">25</item>
                                 <item name="loading" xsi:type="string">lazy</item>
                                 <item name="alt" xsi:type="string">Oney</item>
                             </item>
@@ -79,8 +79,8 @@
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">Payplug_Payments::images/logos/ideal.svg</item>
                             <item name="attributes" xsi:type="array">
-                                <item name="width" xsi:type="number">30</item>
-                                <item name="height" xsi:type="number">34</item>
+                                <item name="width" xsi:type="number">80</item>
+                                <item name="height" xsi:type="number">30</item>
                                 <item name="loading" xsi:type="string">lazy</item>
                                 <item name="alt" xsi:type="string">iDEAL</item>
                             </item>
@@ -98,8 +98,8 @@
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">Payplug_Payments::images/logos/mybank.svg</item>
                             <item name="attributes" xsi:type="array">
-                                <item name="width" xsi:type="number">53</item>
-                                <item name="height" xsi:type="number">30</item>
+                                <item name="width" xsi:type="number">60</item>
+                                <item name="height" xsi:type="number">33</item>
                                 <item name="loading" xsi:type="string">lazy</item>
                                 <item name="alt" xsi:type="string">MyBank</item>
                             </item>
@@ -117,7 +117,7 @@
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">Payplug_Payments::images/logos/satispay.svg</item>
                             <item name="attributes" xsi:type="array">
-                                <item name="width" xsi:type="number">127</item>
+                                <item name="width" xsi:type="number">130</item>
                                 <item name="height" xsi:type="number">30</item>
                                 <item name="loading" xsi:type="string">lazy</item>
                                 <item name="alt" xsi:type="string">Satispay</item>
@@ -141,6 +141,63 @@
                                 <item name="height" xsi:type="number">28</item>
                                 <item name="loading" xsi:type="string">lazy</item>
                                 <item name="alt" xsi:type="string">CB Visa Mastercard</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+
+            <block name="checkout.payment.method.payplug_payments_bizum"
+                   as="payplug_payments_bizum"
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/ppro.phtml">
+                <arguments>
+                    <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Ppro</argument>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">Payplug_Payments::images/logos/bizum.svg</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="width" xsi:type="number">100</item>
+                                <item name="height" xsi:type="number">30</item>
+                                <item name="loading" xsi:type="string">lazy</item>
+                                <item name="alt" xsi:type="string">Bizum</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+
+            <block name="checkout.payment.method.payplug_payments_scalapay"
+                   as="payplug_payments_scalapay"
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/ppro.phtml">
+                <arguments>
+                    <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Ppro</argument>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">Payplug_Payments::images/logos/scalapay.svg</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="width" xsi:type="number">130</item>
+                                <item name="height" xsi:type="number">30</item>
+                                <item name="loading" xsi:type="string">lazy</item>
+                                <item name="alt" xsi:type="string">Scalapay</item>
+                            </item>
+                        </item>
+                    </argument>
+                </arguments>
+            </block>
+
+            <block name="checkout.payment.method.payplug_payments_wero"
+                   as="payplug_payments_wero"
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/ppro.phtml">
+                <arguments>
+                    <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Ppro</argument>
+                    <argument name="metadata" xsi:type="array">
+                        <item name="icon" xsi:type="array">
+                            <item name="src" xsi:type="string">Payplug_Payments::images/logos/wero.svg</item>
+                            <item name="attributes" xsi:type="array">
+                                <item name="width" xsi:type="number">86</item>
+                                <item name="height" xsi:type="number">20</item>
+                                <item name="loading" xsi:type="string">lazy</item>
+                                <item name="alt" xsi:type="string">Wero</item>
                             </item>
                         </item>
                     </argument>

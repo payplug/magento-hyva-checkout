@@ -15,9 +15,10 @@ use Magento\Framework\Escaper;
 ?>
 
 <div>
-    <span id="message" class="text-gray-500 font-medium text-sm"></span>
+    <div id="message" class="text-payment-error font-medium text-sm"></div>
 
     <div id="pp-ppro-payment"
+         data-billing-country-id="<?= $escaper->escapeHtmlAttr($magewire->getQuote()->getBillingAddress()->getCountryId()) ?>"     
          data-shipping-country-id="<?= $escaper->escapeHtmlAttr($magewire->getQuote()->getShippingAddress()->getCountryId()) ?>"
          data-method="<?= $escaper->escapeHtmlAttr($magewire->getQuote()->getPayment()->getMethod()) ?>"
     ></div>
