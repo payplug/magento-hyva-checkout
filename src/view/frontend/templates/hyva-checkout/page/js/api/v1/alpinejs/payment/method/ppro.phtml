@@ -11,6 +11,8 @@ use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
+use Payplug\Payments\Helper\Data;
+use Payplug\Payments\Helper\Ondemand as OndemandHelper;
 
 /** @var Template $block */
 /** @var Escaper $escaper */
@@ -24,11 +26,11 @@ use Magento\Framework\View\Element\Template;
             let btnPlaceOrder;
             let isAvailable = true;
             let message = '';
-            const pproPayments = ['bizum', 'ideal', 'mybank', 'satispay', 'scalapay', 'wero']; // To be dynamized later
+            const pproPayments = <?= json_encode(Data::PPRO_PAYMENT_METHODS) ?>;
 
             pproPayments.forEach((method) => {
                 hyvaCheckout.payment.registerMethod({
-                    code: `payplug_payments_${method}`,
+                    code: method,
                     method: {
                         initialize: async function() {
                             const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
