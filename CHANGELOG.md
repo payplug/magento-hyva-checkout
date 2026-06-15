@@ -5,7 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0](https://github.com/payplug/payplug-magento-hyva/releases/tag/4.0.0) - 2026-06-01
+## [4.0.1](https://github.com/payplug/magento-hyva-checkout/releases/tag/v4.0.1) - 2026-06-20
+
+### Main feature
+- Add Payplug module 4.7.2 version support
+
+### Updated
+- Dynamize PPRO payment methods [#754](https://github.com/payplug/magento-hyva-checkout/pull/18/changes/6a50dc493f1812d9c66a86b2f163aebeee852934)
+
+### Fixed
+- Fix dataset access console error [#779](https://github.com/payplug/magento-hyva-checkout/pull/18/changes/182c068db79e95939037d5c8ba75fa7374742fdc)
+
+**[View diff](https://github.com/payplug/magento-hyva-checkout/compare/v4.0.0...v4.0.1)**
+
+## [4.0.0](https://github.com/payplug/magento-hyva-checkout/releases/tag/v4.0.0) - 2026-06-01
 
 > [!NOTE]
 >
