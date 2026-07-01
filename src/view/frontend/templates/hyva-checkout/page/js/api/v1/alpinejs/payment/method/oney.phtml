@@ -27,7 +27,9 @@ use Magento\Framework\View\Element\Template;
                     code: `payplug_payments_${oneyPaymentType}`,
                     method: {
                         initialize: async function () {
-                            this.oneyPaymentData = document.getElementById('pp-oney-payment').dataset;
+                            const oneyEl = document.getElementById('pp-oney-payment');
+                            if (!oneyEl) return;
+                            this.oneyPaymentData = oneyEl.dataset;
                             this.selectedOptionValue = '';
                             oneyType = this.oneyPaymentData.type;
 

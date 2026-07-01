@@ -29,7 +29,9 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                 code: 'payplug_payments_apple_pay',
                 method: {
                     initialize: async function () {
-                        this.applePayPaymentData = document.getElementById('pp-apple-pay-payment').dataset;
+                        const appleEl = document.getElementById('pp-apple-pay-payment');
+                        if (!appleEl) return;
+                        this.applePayPaymentData = appleEl.dataset;
 
                         this.loadApplePayApi().then(async () => {
                             if (this.checkLoadedAP()) {
