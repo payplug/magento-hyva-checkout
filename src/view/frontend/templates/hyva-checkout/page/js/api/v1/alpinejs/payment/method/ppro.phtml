@@ -35,7 +35,9 @@ use Payplug\Payments\Helper\Ondemand as OndemandHelper;
                         initialize: async function() {
                             const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
 
-                            const pproPaymentData = document.getElementById('pp-ppro-payment').dataset;
+                            const pproEl = document.getElementById('pp-ppro-payment');
+                            if (!pproEl) return;
+                            const pproPaymentData = pproEl.dataset;
                                 const data = {
                                     'billingCountry': pproPaymentData.billingCountryId,
                                     'shippingCountry': pproPaymentData.shippingCountryId,
