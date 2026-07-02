@@ -13,15 +13,45 @@
     }
 }
 
+.cardHolder-input-container {
+    &.error-invalid,
+    &.error-empty {
+        @apply border border-payment-error!;
+
+        & + .error-container {
+            .invalid-field,
+            .empty-field {
+                @apply block text-sm;;
+            }
+        }
+    }
+
+    /* Hosted fields */
+    #cardholder {
+        @apply p-0 w-full;
+
+        &,
+        &:hover,
+        &:focus,
+        &:focus-visible {
+            @apply border-0 outline-0;
+        }
+    }
+}
+
 .pp-integrated-payment {
-    @apply block justify-between w-[300px] mb-0 pl-11 pb-4 pr-4;
+    @apply block justify-between w-[320px] mb-0 pl-11 pb-4 pr-4;
 
     .exp-cvv-container {
         @apply flex gap-3 justify-between mt-3;
     }
 
     .transaction-secured {
-        @apply flex justify-center items-center gap-3 w-full mt-3 text-payplug text-sm text-center leading-5;
+        @apply flex justify-center items-center gap-2 w-full mt-3 text-payplug text-sm text-center leading-5;
+
+        span {
+            @apply whitespace-nowrap;
+        }
 
         img {
             @apply h-4;

@@ -10,47 +10,105 @@ declare(strict_types=1);
 use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\HyvaCsp;
 use Magento\Framework\Escaper;
-use Magento\Framework\View\Element\Template;
+use Payplug\PaymentsHyvaCheckout\Block\Standard as BlockStandard;
 use Payplug\Payments\ViewModel\UrlProvider;
 
+/** @var BlockStandard $block */
 /** @var Escaper $escaper */
 /** @var HyvaCsp $hyvaCsp */
-/** @var Template $block */
 /** @var UrlProvider $urlProvider */
+
+$config = $block->getConfig();
+$paymentConfig = $config['payment'];
+
+$isIntegrated = false;
+$isHostedFieldsActive = false;
+$isOneClick = false;
+$isPopup = false;
+$isRedirected = false;
+$hostedFieldsApiKeyId = '';
+$hostedFieldsApiKey = '';
+$localeCode = '';
+
+if (isset($paymentConfig["payplug_payments_standard"])) {
+    $isIntegrated = $paymentConfig["payplug_payments_standard"]["is_integrated"];
+    $isHostedFieldsActive = $paymentConfig["payplug_payments_standard"]["is_hosted_fields_active"];
+    $isOneClick = $paymentConfig["payplug_payments_standard"]["is_one_click"];
+    $isPopup = $paymentConfig["payplug_payments_standard"]["is_embedded"];
+    $isRedirected = !$isPopup && !$isIntegrated;
+    $hostedFieldsApiKeyId = $paymentConfig["payplug_payments_standard"]["hosted_fields_api_key_id"];
+    $hostedFieldsApiKey = $paymentConfig["payplug_payments_standard"]["hosted_fields_api_key"];
+    $localeCode = $paymentConfig["payplug_payments_standard"]["locale_code"];
+}
 
 $urlProvider = $viewModels->require(UrlProvider::class);
 $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js';
+$hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
 ?>
 
 <script>
     (() => {
         hyvaCheckout.api.after(() => {
             let integratedPayment = {};
-            let paymentOptions = {
-                isIntegrated: false,
-                isOneClick: false,
-                isPopup: false,
-                isRedirected: false,
+            const paymentOptions = {
+                isIntegrated: <?= $isIntegrated ? 'true' : 'false' ?>,
+                isHostedFieldsActive: <?= $isHostedFieldsActive ? 'true' : 'false' ?>,
+                isOneClick: <?= $isOneClick ? 'true' : 'false' ?>,
+                isPopup: <?= $isPopup ? 'true' : 'false' ?>,
+                isRedirected: <?= $isRedirected ? 'true' : 'false' ?>,
                 isSandbox: ''
             };
 
-            hyvaCheckout.payment.registerMethod({
-                code: 'payplug_payments_standard',
-                method: {
-                    initialize: async function () {
-                        const standardPayment = document.getElementById('pp-standard-payment');
-                        paymentOptions = { ...paymentOptions, ...convertStringToBoolean(standardPayment?.dataset ?? {}) };
+            function standardMethod() {
+                return {
+                    bindIntegratedPaymentFormToggle () {
+                        const integratedPaymentForm = document.querySelector('#payplug-payment-form');
+                        const radios = document.querySelectorAll('input[name="payment[payplug_payments_standard][customer_card_id]"]');
+                        const otherCard = document.querySelector('#other-card');
 
-                        function convertStringToBoolean (objectOfStrings) {
-                            return Object.fromEntries(
-                                Object.entries(objectOfStrings).map(([key, value]) => {
-                                    if (value === 'true') return [key, true];
-                                    if (value === 'false') return [key, false];
-                                    return [key, value];
-                                })
-                            );
+                        radios.forEach(radio => {
+                            radio.addEventListener('change', (event) => {
+                                if (otherCard.checked) {
+                                    paymentOptions.isOneClick = false;
+                                    integratedPaymentForm.classList.remove('-hide');
+                                } else {
+                                    paymentOptions.isOneClick = true;
+                                    integratedPaymentForm.classList.add('-hide');
+                                }
+                            });
+                        });
+                    },
+                    fieldsErrorHandler () {
+                        const container = document.getElementById('cardholder-container');
+                        const errorContainer = container.nextElementSibling;
+                        const invalidField = errorContainer.querySelector('.invalid-field');
+                        const emptyField = errorContainer.querySelector('.empty-field');
+                        const value = (document.getElementById('cardholder')?.value || '').trim();
+
+                        container.classList.remove('error-empty', 'error-invalid');
+                        invalidField.style.display = '';
+                        emptyField.style.display = '';
+
+                        if (value === '') {
+                            container.classList.add('error-empty');
+                            invalidField.style.display = 'none';
+                            return false;
                         }
 
+                        if (!/^[a-zA-ZÀ-ÿ]+(?:[ '\-][a-zA-ZÀ-ÿ]+)+$/.test(value)) {
+                            container.classList.add('error-invalid');
+                            emptyField.style.display = 'none';
+                            return false;
+                        }
+
+                        return true;
+                    },
+                };
+            }
+
+            function integratedPaymentMethod() {
+                return {
+                    initialize: async function () {
                         function setIntegratedFormFields () {
                             const fieldStyle = {
                                 default: {
@@ -107,7 +165,7 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                             setIntegratedFormFields();
                         }
 
-                        this.loadPayplugApi()
+                        this.loadPayplugLib()
                             .then(() => {
                                 if (paymentOptions.isIntegrated && !this.isInitialized()) {
                                     this.setFieldsError();
@@ -127,8 +185,21 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                             this.bindIntegratedPaymentFormToggle();
                         }
                     },
+                    loadPayplugLib () {
+                        return new Promise(resolve => {
+                            const script = document.createElement('script');
+                            script.type = 'text/javascript';
+                            script.src =  '<?= $escaper->escapeJs($integratedPaymentUrl) ?>';
+                            script.async = true;
+                            script.onload = resolve;
+                            document.head.appendChild(script);
+                        });
+                    },
                     isInitialized() {
                         return Object.keys(integratedPayment).length;
+                    },
+                    uninitialize: async function () {
+                        integratedPayment = {};
                     },
                     setFieldsError() {
                         const inputs = document.querySelectorAll('#cardholder-input-container, #pan-input-container, #exp-input-container, #cvv-input-container');
@@ -145,36 +216,6 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
 
                         const config = { attributes: true };
                         inputs.forEach(input => observer.observe(input, config));
-                    },
-                    loadPayplugApi () {
-                        return new Promise(resolve => {
-                            const script = document.createElement('script');
-                            script.type = 'text/javascript';
-                            script.src =  '<?= $escaper->escapeJs($integratedPaymentUrl) ?>';
-                            script.async = true;
-                            script.onload = resolve;
-                            document.head.appendChild(script);
-                        });
-                    },
-                    bindIntegratedPaymentFormToggle () {
-                        const integratedPaymentForm = document.querySelector('#payplug-payment-form');
-                        const radios = document.querySelectorAll('input[name="payment[payplug_payments_standard][customer_card_id]"]');
-                        const otherCard = document.querySelector('#other-card');
-
-                        radios.forEach(radio => {
-                            radio.addEventListener('change', (event) => {
-                                if (otherCard.checked) {
-                                    paymentOptions.isOneClick = false;
-                                    integratedPaymentForm.classList.remove('-hide');
-                                } else {
-                                    paymentOptions.isOneClick = true;
-                                    integratedPaymentForm.classList.add('-hide');
-                                }
-                            });
-                        });
-                    },
-                    uninitialize: async function () {
-                        integratedPayment = {};
                     },
                     validate: async function() {
                         const cancelUrl = BASE_URL + 'payplug_payments/payment/cancel';
@@ -210,7 +251,7 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                                         
                                         await validateForm();
 
-                                        const response = await fetch(`${redirectUrl}?should_redirect=0&integrated=1`);
+                                        const response = await fetch(`${redirectUrl}?should_redirect=0&has_payment_form=1`);
                                         const { payment_id, error } = await response.json();
 
                                         if (error) throw new Error('Payment error');
@@ -282,6 +323,219 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                             }
                         }
                     }
+                }
+            }
+
+            let hostedFieldsApi = null;
+            let hostedFieldsToken = null;
+            let hostedFieldsSelectedBrand = null;
+
+            function hostedFieldsPaymentMethod() {
+                return {
+                    hostedFieldsForm: null,
+                    availableLanguages: ['fr', 'en', 'de', 'es', 'it', 'nl', 'zh', 'ru', 'pt', 'sk'],
+                    apiKeyId: '<?= $escaper->escapeJs($hostedFieldsApiKeyId) ?>',
+                    apiKey: '<?= $escaper->escapeJs($hostedFieldsApiKey) ?>',
+                    locale: '<?= $escaper->escapeJs($localeCode) ?>',
+                    inputStyles: {
+                        input: {
+                            "font-size": "14px",
+                            "line-height": "38px",
+                        },
+                        '::placeholder': {
+                            'letter-spacing': '0.1em'
+                        },
+                        ':invalid':  {
+                            "color": "red"
+                        }
+                    },
+                    initialize: async function () {
+                        this.loadHostedFieldsLib()
+                            .then(() => {
+                                this.initPaymentForm();
+                            })
+                            .catch(error => {
+                                window.dispatchMessages([
+                                    {
+                                        type: 'error',
+                                        text: '<?= $escaper->escapeJs(__('Dalenys library could not load correctly')) ?>'
+                                    }
+                                ], 2000);
+                            });
+                    },
+                    loadHostedFieldsLib () {
+                        return new Promise(resolve => {
+                            const script = document.createElement('script');
+                            script.type = 'text/javascript';
+                            script.src =  '<?= $escaper->escapeJs($hostedFieldsPaymentUrl) ?>';
+                            script.async = true;
+                            script.onload = resolve;
+                            document.head.appendChild(script);
+                        });
+                    },
+                    initPaymentForm () {
+                        if (hostedFieldsApi !== null) {
+                            return false;
+                        }
+
+                        const lang = this.locale.split('_')[0];
+
+                        if (!this.availableLanguages.includes(lang)) {
+                            lang = 'fr';
+                        }
+
+                        const hostedFieldsConfig = {
+                            key: {
+                                id: this.apiKeyId,
+                                value: this.apiKey,
+                            },
+                            theme: {
+                                mode: 'light'
+                            },
+                            fields: {
+                                brand: {
+                                    id: 'brand-container',
+                                    version: 2,
+                                    useInlineSelection: false,
+                                    isCbPreferredNetwork: true
+                                },
+                                card: {
+                                    id: 'pan-input-container',
+                                    placeholder: '•••• •••• •••• ••••',
+                                    enableAutospacing: true,
+                                    style: this.inputStyles,
+                                },
+                                expiry: {
+                                    id: 'exp-input-container',
+                                    placeholder: '<?= $escaper->escapeJs(__('MM/YY')) ?>',
+                                    style: this.inputStyles
+                                },
+                                cryptogram: {
+                                    id: 'cvv-input-container',
+                                    placeholder: 'CVV',
+                                    style: this.inputStyles
+                                },
+                            },
+                            location: lang,
+                        };
+
+                        hostedFieldsApi = dalenys.hostedFields(hostedFieldsConfig);
+                        hostedFieldsApi.load();
+
+                        ['input', 'blur'].forEach(event => {
+                            document.getElementById('cardholder').addEventListener(event, this.validateCardholder);
+                        });
+
+                        return true;
+                    },
+                    validateCardholder () {
+                        const container = document.getElementById('cardholder-input-container');
+                        const errorContainer = container.nextElementSibling;
+                        const invalidField = errorContainer.querySelector('.invalid-field');
+                        const emptyField = errorContainer.querySelector('.empty-field');
+                        const value = (document.getElementById('cardholder')?.value || '').trim();
+
+                        container.classList.remove('error-empty', 'error-invalid');
+                        invalidField.style.display = '';
+                        emptyField.style.display = '';
+
+                        if (value === '') {
+                            container.classList.add('error-empty');
+                            invalidField.style.display = 'none';
+                            return false;
+                        }
+
+                        if (!/^[a-zA-ZÀ-ÿ]+(?:[ '\-][a-zA-ZÀ-ÿ]+)+$/.test(value)) {
+                            container.classList.add('error-invalid');
+                            emptyField.style.display = 'none';
+                            return false;
+                        }
+
+                        return true;
+                    },
+                    validate: async function() {
+                        const cancelUrl = BASE_URL + 'payplug_payments/payment/cancel';
+                        const returnUrl = BASE_URL + 'payplug_payments/payment/paymentReturn';
+                        const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
+
+                        await new Promise((resolve, reject) => {
+                            hostedFieldsApi.createToken(function (result) {
+                                magewire.plugins.loader.stop();
+
+                                if (result.execCode !== '0000') {
+                                    window.dispatchMessages([
+                                        {
+                                            type: 'error',
+                                            text: '<?= $escaper->escapeJs(__('The transaction was aborted and your card has not been charged')) ?>'
+                                        }
+                                    ], 2000);
+                                    reject(new Error('Token creation failed'));
+                                    return;
+                                }
+
+                                hostedFieldsToken = result.hfToken;
+                                hostedFieldsSelectedBrand = result.selectedBrand;
+                                resolve();
+                            });
+                        });
+
+                        hyvaCheckout.evaluation.registerExecutable('make:pay-plug:payment', async () => {
+                            try {
+                                magewire.plugins.loader.start();
+
+                                const response = await fetch(`${redirectUrl}?should_redirect=0&has_payment_form=1`);
+                                const { payment_id, error } = await response.json();
+
+                                if (error) throw new Error('Payment error');
+
+                                return new Promise((resolve, reject) => {
+                                    if (response.error === true) {
+                                        alert(response.message);
+                                        window.location.replace(cancelUrl);
+                                        return;
+                                    }
+
+                                    if (!response.payment_id) {
+                                        window.location.replace(returnUrl);
+                                        return;
+                                    }
+
+                                    // TODO afterStandardSuccess() transpil
+                                });
+                            } catch (error) {
+                                window.location.replace(cancelUrl);
+                                throw error;
+                            }
+                        });
+
+                        const selectedInput = document.querySelector('input[name="payment[payplug_payments_standard][customer_card_id]"]:checked') || null;
+                        const cartId = selectedInput?.dataset?.cardId;
+                        const saveCard = (document.querySelector('#payplug_save_card')?.checked ?? false) && paymentOptions.isOneClick;
+                        const cardHolder = document.getElementById('cardholder')?.value || '';
+
+                        await Magewire.find('checkout.payment.method.payplug_payments_standard').call(
+                            'setHostedFieldsAdditionalData',
+                            hostedFieldsToken,
+                            hostedFieldsSelectedBrand,
+                            saveCard,
+                            cardHolder
+                        );
+
+                        hyvaCheckout.main.getWireComponent().placeOrder();
+                        return true;
+                    }
+                }
+            }
+
+            hyvaCheckout.payment.registerMethod({
+                code: 'payplug_payments_standard',
+                method: {
+                    ...standardMethod(),
+                    <?php if ($isHostedFieldsActive): ?>
+                    ...hostedFieldsPaymentMethod()
+                    <?php else: ?>
+                    ...integratedPaymentMethod()
+                    <?php endif; ?>
                 }
             });
         });
