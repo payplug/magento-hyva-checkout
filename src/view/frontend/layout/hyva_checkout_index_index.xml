@@ -18,7 +18,16 @@
                    template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/ppro.phtml"/>
             <block name="hyva.checkout.alpinejs.payplug-standard"
                    class="Payplug\PaymentsHyvaCheckout\Block\Standard"
-                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/standard.phtml"/>
+                   template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/standard.phtml">
+                <block name="hyva.checkout.alpinejs.payplug-standard.integrated"
+                       class="Payplug\PaymentsHyvaCheckout\Block\Standard"
+                       as="standard_integrated"
+                       template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/standard-integrated.phtml"/>
+                <block name="hyva.checkout.alpinejs.payplug-standard.hosted-fields"
+                       class="Payplug\PaymentsHyvaCheckout\Block\Standard"
+                       as="standard_hosted_fields"
+                       template="Payplug_PaymentsHyvaCheckout::hyva-checkout/page/js/api/v1/alpinejs/payment/method/standard-hosted-fields.phtml"/>
+            </block>
         </referenceContainer>
     </body>
 </page>
