@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.2](https://github.com/payplug/magento-hyva-checkout/releases/tag/v4.0.2) - 2026-26-08
+## [4.1.0](https://github.com/payplug/magento-hyva-checkout/releases/tag/v4.1.0) - 2026-09-28
+
+### Main feature
+- Add Hosted Fields payment mode (MAG-636)
+
+### Added
+- Add Hosted Fields payment mode (MAG-636) [#0887927f](https://github.com/payplug/magento-hyva-checkout/commit/0887927f4767eb1a6785b5a36ed982cc445767b9)
+
+### Fixed
+- Fix Apple Pay transaction update when the Hyvä Theme module is not installed, by using the Payplug module endpoint (MAG-823) [#6f9c844c](https://github.com/payplug/magento-hyva-checkout/commit/6f9c844cb956eecee72fadc192555fe4fe8e3f8f)
+- Fix undefined `payment` array key warning on checkout when the Payplug standard payment method is unavailable (MAG-824) [#740976a0](https://github.com/payplug/magento-hyva-checkout/commit/740976a0c215000f51b2689539ac932735dad580)
+
+### Removed
+- Remove unused `hyva_checkout_payplug` frontend route declaration (MAG-823) [#6f9c844c](https://github.com/payplug/magento-hyva-checkout/commit/6f9c844cb956eecee72fadc192555fe4fe8e3f8f)
+
+## [4.0.2](https://github.com/payplug/magento-hyva-checkout/releases/tag/v4.0.2) - 2026-08-26
 
 ### Main feature
 - Add configuration fallback for Tailwind V3
