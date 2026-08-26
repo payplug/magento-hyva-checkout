@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.2](https://github.com/payplug/magento-hyva-checkout/releases/tag/v4.0.2) - 2026-XX-XX
+
+### Main feature
+- Add configuration fallback for Tailwind V3
+
+### Added
+- Add configuration fallback for Tailwind V3 [#](https://github.com/payplug/magento-hyva-checkout/commit/1c175324fa9ca0fb07bdd6e3b83b28f5008efd8f)
+
 ## [4.0.1](https://github.com/payplug/magento-hyva-checkout/releases/tag/v4.0.1) - 2026-06-20
 
 ### Main feature
