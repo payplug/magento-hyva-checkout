@@ -175,3 +175,7 @@
 .-hide {
     @apply hidden;
 }
+
+#payplug-payments-cards {
+    @apply pb-4;
+}

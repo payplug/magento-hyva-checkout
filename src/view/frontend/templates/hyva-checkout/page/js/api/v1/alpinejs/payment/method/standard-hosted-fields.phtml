@@ -98,7 +98,7 @@ $hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
                             return false;
                         }
 
-                        const lang = this.locale.split('_')[0];
+                        let lang = this.locale.split('_')[0];
 
                         if (!this.availableLanguages.includes(lang)) {
                             lang = 'fr';
@@ -146,7 +146,24 @@ $hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
                             document.getElementById('cardholder').addEventListener(event, this.validateCardholder);
                         });
 
+                        this.bindPaymentFormToggle();
+
                         return true;
+                    },
+                    bindPaymentFormToggle () {
+                        const paymentForm = document.querySelector('#payplug-payment-form');
+                        const otherCard = document.querySelector('#other-card');
+                        const radios = document.querySelectorAll('input[name="payment[payplug_payments_standard][customer_card_id]"]');
+
+                        if (paymentForm === null || otherCard === null) {
+                            return;
+                        }
+
+                        radios.forEach(radio => {
+                            radio.addEventListener('change', () => {
+                                paymentForm.classList.toggle('-hide', !otherCard.checked);
+                            });
+                        });
                     },
                     validateCardholder () {
                         const container = document.getElementById('cardholder-input-container');
@@ -178,26 +195,36 @@ $hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
                         const returnUrl = BASE_URL + 'payplug_payments/payment/paymentReturn';
                         const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
 
-                        await new Promise((resolve, reject) => {
-                            hostedFieldsApi.createToken(function (result) {
-                                magewire.plugins.loader.stop();
+                        if (payplugCards.length > 0 && isOneClick) {
+                            const selectedInput = document.querySelector('input[name="payment[payplug_payments_standard][customer_card_id]"]:checked') || null;
+                            cartId = selectedInput?.dataset?.cardId || '';
+                        }
 
-                                if (result.execCode !== '0000') {
-                                    window.dispatchMessages([
-                                        {
-                                            type: 'error',
-                                            text: '<?= $escaper->escapeJs(__('The transaction was aborted and your card has not been charged')) ?>'
-                                        }
-                                    ], 2000);
-                                    reject(new Error('Token creation failed'));
-                                    return;
-                                }
+                        hostedFieldsToken = '';
+                        hostedFieldsSelectedBrand = '';
 
-                                hostedFieldsToken = result.hfToken;
-                                hostedFieldsSelectedBrand = result.selectedBrand;
-                                resolve();
+                        if (cartId === '') {
+                            await new Promise((resolve, reject) => {
+                                hostedFieldsApi.createToken(function (result) {
+                                    magewire.plugins.loader.stop();
+
+                                    if (result.execCode !== '0000') {
+                                        window.dispatchMessages([
+                                            {
+                                                type: 'error',
+                                                text: '<?= $escaper->escapeJs(__('The transaction was aborted and your card has not been charged')) ?>'
+                                            }
+                                        ], 2000);
+                                        reject(new Error('Token creation failed'));
+                                        return;
+                                    }
+
+                                    hostedFieldsToken = result.hfToken;
+                                    hostedFieldsSelectedBrand = result.selectedBrand;
+                                    resolve();
+                                });
                             });
-                        });
+                        }
 
                         hyvaCheckout.evaluation.registerExecutable('make:pay-plug:payment', async () => {
                             try {
@@ -248,12 +275,8 @@ $hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
                             }
                         });
 
-                        if (payplugCards.length > 0 && isOneClick) {
-                            const selectedInput = document.querySelector('input[name="payment[payplug_payments_standard][customer_card_id]"]:checked') || null;
-                            cartId = selectedInput?.dataset?.cardId;
-                            saveCard = document.querySelector('#payplug_save_card')?.checked;
-                            cardHolder = document.getElementById('cardholder')?.value || '';
-                        }
+                        saveCard = cartId === '' && document.querySelector('#payplug_save_card')?.checked === true;
+                        cardHolder = document.getElementById('cardholder')?.value || '';
 
                         await Magewire.find('checkout.payment.method.payplug_payments_standard').call(
                             'setHostedFieldsAdditionalData',

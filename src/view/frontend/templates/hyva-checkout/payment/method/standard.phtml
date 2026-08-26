@@ -8,7 +8,7 @@
 declare(strict_types=1);
 
 use Payplug\PaymentsHyvaCheckout\Block\Standard as BlockStandard;
-use Payplug\PaymentsHyvaCheckout\Model\Magewire\Payment\Method\Standard as MethodStandard;
+use Payplug\PaymentsHyvaCheckout\Magewire\Standard as MethodStandard;
 use Payplug\PaymentsHyvaCheckout\ViewModel\PayplugIcons;
 use Hyva\Theme\Model\ViewModelRegistry;
 use Hyva\Theme\ViewModel\StoreConfig;
@@ -51,16 +51,15 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
             <ul class="pl-5 space-y-4" id="payplug-payments-cards">
                 <?php foreach ($payplugCards as $payplugCard) : ?>
                     <?php
-                        $customerCardId = $payplugCard->getCustomerCardId();
-                        $cardBrand = $payplugCard->getBrand();
-                        $cardFourDigits = $payplugCard->getLastFour();
-                        $date = $payplugCard->getExpDate();
-                        $cardExpirationDate = $block->getFormattedExpDate($date);
+                        $customerCardId = $payplugCard['id'];
+                        $cardBrand = $payplugCard['brand'];
+                        $cardFourDigits = $payplugCard['last4'];
+                        $cardExpirationDate = $payplugCard['exp_date'];
                     ?>
                     <li class="flex items-center gap-x-2.5">
                         <input type="radio"
-                            name="payment[payplug_payments_standard][customer_card_id]" 
-                            id="payplug_payments_card_<?= $escaper->escapeHtmlAttr($customerCardId); ?>" 
+                            name="payment[payplug_payments_standard][customer_card_id]"
+                            id="payplug_payments_card_<?= $escaper->escapeHtmlAttr($customerCardId); ?>"
                             class="payplug-payments-customer-card"
                             data-card-id="<?= $escaper->escapeHtmlAttr($customerCardId); ?>"
                             value="<?= $escaper->escapeHtmlAttr($customerCardId); ?>" />
@@ -79,10 +78,11 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                 <?php endforeach ?>
                 <li class="flex items-center gap-x-2.5">
                     <input type="radio"
-                        name="payment[payplug_payments_standard][customer_card_id]" 
+                        name="payment[payplug_payments_standard][customer_card_id]"
                         id="other-card"
-                        class="payplug-payments-customer-card" 
-                        value="" />
+                        class="payplug-payments-customer-card"
+                        value=""
+                        <?= $isHostedFieldsActive ? 'checked' : '' ?> />
                     <label for="other-card" class="mb-0">
                         <?= $escaper->escapeHtml(__('Pay with another card')); ?>
                     </label>
@@ -91,10 +91,10 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
         <?php endif; ?>
 
         <div id="payplug-payment-form"
-             class="payplug pp-integrated-payment -loaded <?= !empty($payplugCards) && $isOneClick ? 'ml-[46px] pt-3 -hide' : '' ?>"
+             class="payplug pp-integrated-payment -loaded <?= !empty($payplugCards) && $isOneClick ? 'ml-[46px] pt-3' . ($isHostedFieldsActive ? '' : ' -hide') : '' ?>"
              wire:ignore>
             <div id="cardholder-input-container" class="payplug pp-integrated-payment_container -cardHolder cardHolder-input-container" data-e2e-name="cardHolder">
-                <?php if ($isHostedFieldsActive) : ?>    
+                <?php if ($isHostedFieldsActive) : ?>
                     <input type="text" autocomplete="cc-name" autocorrect="off" autocapitalize="characters" spellcheck="false" class="cardholder required-entry" name="cardholder" id="cardholder" maxlength="45">
                 <?php endif; ?>
             </div>
@@ -120,7 +120,7 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                                class="sr-only"
                                name="schemeOptions"
                                value="visa"
-                               :value="currentCard" 
+                               :value="currentCard"
                                @change="handleInputChange()" />
                     </label>
                     <label class="hover:cursor-pointer">
@@ -135,7 +135,7 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                                class="sr-only"
                                name="schemeOptions"
                                value="mastercard"
-                               :value="currentCard" 
+                               :value="currentCard"
                                @change="handleInputChange()" />
                     </label>
                     <label class="hover:cursor-pointer">
@@ -152,7 +152,7 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                                class="sr-only"
                                name="schemeOptions"
                                value="cb"
-                               :value="currentCard" 
+                               :value="currentCard"
                                @change="handleInputChange()" />
                     </label>
                 </div>
@@ -183,7 +183,7 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                     </div>
                 </div>
             </div>
-            <?php if (empty($payplugCards) && $isOneClick ) : ?>
+            <?php if ($isOneClick) : ?>
                 <div class="save-card-container">
                     <input type="checkbox" name="save_card" id="payplug_save_card">
                     <label for="payplug_save_card" class="inline align-middle"><?= $escaper->escapeHtml(__('Save my credit card')); ?></label>

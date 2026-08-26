@@ -11,9 +11,12 @@ use Magento\Customer\Model\Session;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
+use Payplug\Payments\Api\Data\PaymentTokenInterface;
 use Payplug\Payments\Helper\Card;
-use Payplug\Payments\Model\Customer\Card as CustomerCard;
+use Payplug\Payments\Helper\Config as PayplugConfig;
 use Payplug\Payments\Model\Payment\Standard\ConfigProvider as Config;
+use Payplug\Payments\Service\GetHostedFieldsSavedCards;
+use Throwable;
 
 class Standard extends Template
 {
@@ -23,6 +26,8 @@ class Standard extends Template
         private Card $helper,
         private Config $config,
         private ResolverInterface $localeResolver,
+        private readonly PayplugConfig $payplugConfig,
+        private readonly GetHostedFieldsSavedCards $getHostedFieldsSavedCards,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -51,13 +56,31 @@ class Standard extends Template
     }
 
     /**
-     * Get customer saved PayPlug cards
+     * Get customer saved cards, normalized as ['id', 'brand', 'last4', 'exp_date']
      *
-     * @return CustomerCard[]
+     * @see \Payplug\Payments\CustomerData\Cards for the Luma counterpart
+     *
+     * @return array[]
      */
     public function getPayplugCards(): array
     {
-        return $this->helper->getCardsByCustomer($this->customerSession->getCustomer()->getId(), true);
+        $customerId = (int) $this->customerSession->getCustomer()->getId();
+
+        if ($customerId === 0) {
+            return [];
+        }
+
+        try {
+            $websiteId = (int) $this->_storeManager->getStore()->getWebsiteId();
+        } catch (Throwable) {
+            return [];
+        }
+
+        if ($this->payplugConfig->isHostedFieldsActive($websiteId) === true) {
+            return $this->getHostedFieldsCards($customerId);
+        }
+
+        return $this->getPayplugRetailCards($customerId);
     }
 
     /**
@@ -76,5 +99,67 @@ class Standard extends Template
         return $this->_urlBuilder->getUrl('payplug_payments/customer/cardDelete', [
             'customer_card_id' => $customerCardId
         ]);
+    }
+
+    /**
+     * Get Payplug Retail saved cards
+     *
+     * @param int $customerId
+     * @return array[]
+     */
+    private function getPayplugRetailCards(int $customerId): array
+    {
+        $cards = [];
+
+        foreach ($this->helper->getCardsByCustomer($customerId, true) as $card) {
+            $cards[] = [
+                'id' => (string) $card->getCustomerCardId(),
+                'brand' => $card->getBrand(),
+                'last4' => $card->getLastFour(),
+                'exp_date' => $this->getFormattedExpDate((string) $card->getExpDate()),
+            ];
+        }
+
+        return $cards;
+    }
+
+    /**
+     * Get Hosted Fields saved cards, stored as Magento vault payment tokens
+     *
+     * @param int $customerId
+     * @return array[]
+     */
+    private function getHostedFieldsCards(int $customerId): array
+    {
+        try {
+            $storeId = (int) $this->_storeManager->getStore()->getId();
+            $customerCards = $this->getHostedFieldsSavedCards->execute($customerId, $storeId);
+        } catch (Throwable) {
+            return [];
+        }
+
+        $cards = [];
+
+        foreach ($customerCards as $customerCard) {
+            $token = $customerCard[GetHostedFieldsSavedCards::TOKEN_OBJECT_KEY];
+            $tokenDetails = $customerCard[GetHostedFieldsSavedCards::TOKEN_DETAILS_KEY];
+
+            $brand = $tokenDetails[PaymentTokenInterface::DETAIL_BRAND] ?? null;
+            $last4 = $tokenDetails[PaymentTokenInterface::MASKED_CC] ?? null;
+            $expDate = $tokenDetails[PaymentTokenInterface::EXP_DATE] ?? null;
+
+            if (empty($brand) || empty($last4) || empty($expDate)) {
+                continue;
+            }
+
+            $cards[] = [
+                'id' => (string) $token->getPublicHash(),
+                'brand' => $brand,
+                'last4' => $last4,
+                'exp_date' => $expDate,
+            ];
+        }
+
+        return $cards;
     }
 }

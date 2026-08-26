@@ -77,7 +77,9 @@ class DeferPlaceOrderService extends AbstractPlaceOrderService
     {
         $payment = $quote->getPayment();
         $additionalInformation = $payment->getAdditionalInformation();
-        if (!empty($additionalInformation[OrderPaymentInterface::HF_CARD_ID_KEY])) {
+        $isHostedFieldsPayment = !empty($additionalInformation[OrderPaymentInterface::HF_PAYMENT_KEY]);
+
+        if ($isHostedFieldsPayment === false && !empty($additionalInformation[OrderPaymentInterface::HF_CARD_ID_KEY])) {
             $this->oneclick = true;
         }
 
