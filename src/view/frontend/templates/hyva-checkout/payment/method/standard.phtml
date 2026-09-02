@@ -106,6 +106,7 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                 <div>
                     <?= $escaper->escapeHtml(__('Your card')); ?>
                 </div>
+                <?php if ($block->canDisplayCardsLogo()) : ?>
                 <div x-data="standardPayment"
                      class="flex justify-between items-center flex-wrap w-[115px]">
                     <label class="hover:cursor-pointer">
@@ -156,6 +157,7 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                                @change="handleInputChange()" />
                     </label>
                 </div>
+                <?php endif; ?>
             </div>
             <div id="pan-input-container" class="payplug pp-integrated-payment_container -pan pan-input-container" data-e2e-name="pan">
                 <?php if ($isHostedFieldsActive) : ?>

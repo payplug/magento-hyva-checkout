@@ -7,27 +7,29 @@
 
 namespace Payplug\PaymentsHyvaCheckout\Block;
 
-use Magento\Customer\Model\Session;
+use Magento\Checkout\Model\Session as CheckoutSession;
+use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Payplug\Payments\Api\Data\PaymentTokenInterface;
-use Payplug\Payments\Helper\Card;
+use Payplug\Payments\Helper\Card as CardHelper;
 use Payplug\Payments\Helper\Config as PayplugConfig;
-use Payplug\Payments\Model\Payment\Standard\ConfigProvider as Config;
+use Payplug\Payments\Model\Payment\Standard\ConfigProvider;
 use Payplug\Payments\Service\GetHostedFieldsSavedCards;
 use Throwable;
 
 class Standard extends Template
 {
     public function __construct(
-        Context $context,
-        private Session $customerSession,
-        private Card $helper,
-        private Config $config,
-        private ResolverInterface $localeResolver,
+        private readonly CustomerSession $customerSession,
+        private readonly CardHelper $cardHelper,
+        private readonly ConfigProvider $configProvider,
+        private readonly ResolverInterface $localeResolver,
         private readonly PayplugConfig $payplugConfig,
         private readonly GetHostedFieldsSavedCards $getHostedFieldsSavedCards,
+        private readonly CheckoutSession $checkoutSession,
+        Context $context,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -35,7 +37,7 @@ class Standard extends Template
 
     public function getConfig(): array
     {
-        return $this->config->getConfig();
+        return $this->configProvider->getConfig();
     }
 
     /**
@@ -52,7 +54,33 @@ class Standard extends Template
             $this->setData('metadata', $metadata);
         }
 
+        if ($this->canDisplayCardsLogo() === false) {
+            $metadata = $this->getData('metadata');
+            unset($metadata['icon']);
+            $this->setData('metadata', $metadata);
+        }
+
         return $this;
+    }
+
+    /**
+     * Card scheme logos are only relevant on EUR quotes when Hosted Fields is active.
+     *
+     * @see \Payplug\Payments\Model\Payment\Standard\ConfigProvider for the Luma counterpart
+     */
+    public function canDisplayCardsLogo(): bool
+    {
+        try {
+            $websiteId = (int) $this->_storeManager->getStore()->getWebsiteId();
+
+            if ($this->payplugConfig->isHostedFieldsActive($websiteId) === false) {
+                return true;
+            }
+
+            return $this->checkoutSession->getQuote()->getBaseCurrencyCode() === 'EUR';
+        } catch (Throwable) {
+            return true;
+        }
     }
 
     /**
@@ -88,7 +116,7 @@ class Standard extends Template
      */
     public function getFormattedExpDate(string $date): string
     {
-        return $this->helper->getFormattedExpDate($date);
+        return $this->cardHelper->getFormattedExpDate($date);
     }
 
     /**
@@ -111,7 +139,7 @@ class Standard extends Template
     {
         $cards = [];
 
-        foreach ($this->helper->getCardsByCustomer($customerId, true) as $card) {
+        foreach ($this->cardHelper->getCardsByCustomer($customerId, true) as $card) {
             $cards[] = [
                 'id' => (string) $card->getCustomerCardId(),
                 'brand' => $card->getBrand(),
