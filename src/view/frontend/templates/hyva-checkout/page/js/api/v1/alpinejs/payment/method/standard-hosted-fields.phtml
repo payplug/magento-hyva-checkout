@@ -13,6 +13,7 @@ use Magento\Framework\Escaper;
 use Payplug\PaymentsHyvaCheckout\Block\Standard as BlockStandard;
 use Payplug\Payments\ViewModel\UrlProvider;
 
+/** @var ViewModelRegistry $viewModels */
 /** @var BlockStandard $block */
 /** @var Escaper $escaper */
 /** @var HyvaCsp $hyvaCsp */
@@ -280,11 +281,11 @@ $hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
 
                         await Magewire.find('checkout.payment.method.payplug_payments_standard').call(
                             'setHostedFieldsAdditionalData',
-                            cartId,
                             hostedFieldsToken,
                             hostedFieldsSelectedBrand,
                             saveCard,
-                            cardHolder
+                            cardHolder,
+                            cartId
                         );
 
                         return true;

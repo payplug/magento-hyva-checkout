@@ -13,6 +13,7 @@ use Magento\Framework\Escaper;
 use Payplug\PaymentsHyvaCheckout\Block\Standard as BlockStandard;
 use Payplug\Payments\ViewModel\UrlProvider;
 
+/** @var ViewModelRegistry $viewModels */
 /** @var BlockStandard $block */
 /** @var Escaper $escaper */
 /** @var HyvaCsp $hyvaCsp */
@@ -183,8 +184,8 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                         }
 
                         if (payplugCards.length > 0 && paymentOptions.isOneClick) {
-                            const cartId = selectedInput?.dataset?.cardId;
-                            await Magewire.find('checkout.payment.method.payplug_payments_standard').call('setAdditionalData', cartId);
+                            const cartId = selectedInput?.dataset?.cardId ?? '';
+                            await Magewire.find('checkout.payment.method.payplug_payments_standard').call('setCardIdOnAdditionalData', cartId);
                             hyvaCheckout.main.getWireComponent().placeOrder();
                             return true;
                         } else {
