@@ -34,13 +34,20 @@ $isOneClick = false;
 $isPopup = false;
 $isRedirected = false;
 $isHostedFieldsActive = false;
+$selectedCardId = '';
 
 if (isset($paymentConfig["payplug_payments_standard"])) {
     $isIntegrated = $paymentConfig["payplug_payments_standard"]["is_integrated"];
     $isOneClick = $paymentConfig["payplug_payments_standard"]["is_one_click"];
     $isPopup = $paymentConfig["payplug_payments_standard"]["is_embedded"];
     $isHostedFieldsActive = $paymentConfig['payplug_payments_standard']['is_hosted_fields_active'];
+    $selectedCardId = (string) ($paymentConfig["payplug_payments_standard"]["selected_card_id"] ?? '');
     $isRedirected = !$isPopup && !$isIntegrated;
+}
+
+if ($selectedCardId === '' && $isHostedFieldsActive && $isOneClick && !empty($payplugCards)) {
+    $firstCard = reset($payplugCards);
+    $selectedCardId = (string) ($firstCard['id'] ?? '');
 }
 ?>
 
@@ -62,7 +69,8 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                             id="payplug_payments_card_<?= $escaper->escapeHtmlAttr($customerCardId); ?>"
                             class="payplug-payments-customer-card"
                             data-card-id="<?= $escaper->escapeHtmlAttr($customerCardId); ?>"
-                            value="<?= $escaper->escapeHtmlAttr($customerCardId); ?>" />
+                            value="<?= $escaper->escapeHtmlAttr($customerCardId); ?>"
+                            <?= (string) $customerCardId === $selectedCardId ? 'checked' : '' ?> />
                         <label for="payplug_payments_card_<?= $escaper->escapeHtmlAttr($customerCardId); ?>" class="mb-0">
                             <img src="data:image/svg+xml,<?= rawurlencode($icons->renderHtml('other')); ?>"
                                 class="inline"
@@ -82,7 +90,7 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
                         id="other-card"
                         class="payplug-payments-customer-card"
                         value=""
-                        <?= $isHostedFieldsActive ? 'checked' : '' ?> />
+                        <?= $selectedCardId === '' ? 'checked' : '' ?> />
                     <label for="other-card" class="mb-0">
                         <?= $escaper->escapeHtml(__('Pay with another card')); ?>
                     </label>
@@ -91,11 +99,11 @@ if (isset($paymentConfig["payplug_payments_standard"])) {
         <?php endif; ?>
 
         <div id="payplug-payment-form"
-             class="payplug pp-integrated-payment -loaded <?= !empty($payplugCards) && $isOneClick ? 'ml-[46px] pt-3' . ($isHostedFieldsActive ? '' : ' -hide') : '' ?>"
+             class="payplug pp-integrated-payment -loaded <?= !empty($payplugCards) && $isOneClick ? 'ml-[46px] pt-3' . ($selectedCardId === '' ? '' : ' -hide') : '' ?>"
              wire:ignore>
             <div id="cardholder-input-container" class="payplug pp-integrated-payment_container -cardHolder cardHolder-input-container" data-e2e-name="cardHolder">
                 <?php if ($isHostedFieldsActive) : ?>
-                    <input type="text" autocomplete="cc-name" autocorrect="off" autocapitalize="characters" spellcheck="false" class="cardholder required-entry" name="cardholder" id="cardholder" maxlength="45">
+                    <input type="text" autocomplete="cc-name" autocorrect="off" autocapitalize="characters" spellcheck="false" class="cardholder required-entry" name="cardholder" id="cardholder" maxlength="45" placeholder="<?= $escaper->escapeHtmlAttr(__('Payplug Card Holder placeholder')); ?>">
                 <?php endif; ?>
             </div>
             <div class="error-container cardholder-input-container">

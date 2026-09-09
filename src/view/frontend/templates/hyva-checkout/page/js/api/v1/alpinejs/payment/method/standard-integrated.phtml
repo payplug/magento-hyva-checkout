@@ -179,14 +179,14 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                         const selectedInput = document.querySelector('input[name="payment[payplug_payments_standard][customer_card_id]"]:checked') || null;
 
                         if (activeMethod !== 'payplug_payments_standard') {
-                            hyvaCheckout.main.getWireComponent().placeOrder();
                             return true;
                         }
 
-                        if (payplugCards.length > 0 && paymentOptions.isOneClick) {
-                            const cartId = selectedInput?.dataset?.cardId ?? '';
-                            await Magewire.find('checkout.payment.method.payplug_payments_standard').call('setCardIdOnAdditionalData', cartId);
-                            hyvaCheckout.main.getWireComponent().placeOrder();
+                        const selectedCardId = selectedInput?.dataset?.cardId ?? '';
+
+                        if (payplugCards.length > 0 && paymentOptions.isOneClick && selectedCardId !== '') {
+                            await Magewire.find('checkout.payment.method.payplug_payments_standard').call('setCardIdOnAdditionalData', selectedCardId);
+
                             return true;
                         } else {
                             if (paymentOptions.isIntegrated) {
@@ -243,7 +243,6 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                             }
 
                             if (paymentOptions.isRedirected) {
-                                hyvaCheckout.main.getWireComponent().placeOrder();
                                 return true;
                             }
 
