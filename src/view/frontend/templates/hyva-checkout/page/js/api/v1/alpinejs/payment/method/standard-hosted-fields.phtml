@@ -1,0 +1,467 @@
+<?php
+/**
+ * Payplug - https://www.payplug.com/
+ * Copyright © Payplug. All rights reserved.
+ * See LICENSE for license details.
+ */
+
+declare(strict_types=1);
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\Escaper;
+use Payplug\PaymentsHyvaCheckout\Block\Standard as BlockStandard;
+use Payplug\Payments\ViewModel\UrlProvider;
+
+/** @var ViewModelRegistry $viewModels */
+/** @var BlockStandard $block */
+/** @var Escaper $escaper */
+/** @var HyvaCsp $hyvaCsp */
+/** @var UrlProvider $urlProvider */
+
+$config = $block->getConfig();
+$paymentConfig = $config['payment'];
+$payplugCards = $block->getPayplugCards();
+
+$isOneClick = false;
+$hostedFieldsApiKeyId = '';
+$hostedFieldsApiKey = '';
+$localeCode = '';
+
+if (isset($paymentConfig["payplug_payments_standard"])) {
+    $isOneClick = $paymentConfig["payplug_payments_standard"]["is_one_click"];
+    $hostedFieldsApiKeyId = $paymentConfig["payplug_payments_standard"]["hosted_fields_api_key_id"];
+    $hostedFieldsApiKey = $paymentConfig["payplug_payments_standard"]["hosted_fields_api_key"];
+    $localeCode = $paymentConfig["payplug_payments_standard"]["locale_code"];
+}
+
+$urlProvider = $viewModels->require(UrlProvider::class);
+$hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
+?>
+
+<script>
+    (() => {
+        hyvaCheckout.api.after(() => {
+            const isOneClick = <?= $isOneClick ? 'true' : 'false' ?>;
+            const payplugCards = <?= /* @noEscape */ json_encode(is_array($payplugCards) ? $payplugCards : []) ?>;
+            let cartId = '';
+            let hostedFieldsApi = null;
+            let hostedFieldsToken = '';
+            let hostedFieldsSelectedBrand = '';
+            let saveCard = false;
+            let cardHolder = '';
+            const hostedFieldsState = () => ({
+                state: '',
+                length: null,
+                disabled: false,
+                focused: false,
+                filled: false,
+                reported: false,
+            });
+            const hostedFields = {
+                card: { container: 'pan-input-container', ...hostedFieldsState() },
+                expiry: { container: 'exp-input-container', ...hostedFieldsState() },
+                cryptogram: { container: 'cvv-input-container', ...hostedFieldsState() },
+            };
+
+            const paymentMethod = hyvaCheckout.payment.registerMethod({
+                code: 'payplug_payments_standard',
+                method: {
+                    availableLanguages: ['fr', 'en', 'de', 'es', 'it', 'nl', 'zh', 'ru', 'pt', 'sk'],
+                    apiKeyId: '<?= $escaper->escapeJs($hostedFieldsApiKeyId) ?>',
+                    apiKey: '<?= $escaper->escapeJs($hostedFieldsApiKey) ?>',
+                    locale: '<?= $escaper->escapeJs($localeCode) ?>',
+                    inputStyles: {
+                        input: {
+                            "font-size": "14px",
+                            "line-height": "38px",
+                        },
+                        '::placeholder': {
+                            'letter-spacing': '0.1em'
+                        },
+                        ':invalid':  {
+                            "color": "red"
+                        }
+                    },
+                    initialize: async function () {
+                        this.loadHostedFieldsLib()
+                            .then(() => {
+                                this.initPaymentForm();
+                            })
+                            .catch(error => {
+                                window.dispatchMessages([
+                                    {
+                                        type: 'error',
+                                        text: '<?= $escaper->escapeJs(__('Payplug Payments form could not load correctly')) ?>'
+                                    }
+                                ], 2000);
+                            });
+                    },
+                    uninitialize: async function () {
+                        try {
+                            hostedFieldsApi?.dispose();
+                        } catch (error) {
+                            console.error(error);
+                        }
+
+                        Object.keys(hostedFields).forEach(name => {
+                            hostedFields[name] = { container: hostedFields[name].container, ...hostedFieldsState() };
+                        });
+
+                        paymentMethod.clearHostedFieldsErrors();
+
+                        hostedFieldsApi = null;
+                        hostedFieldsToken = '';
+                        hostedFieldsSelectedBrand = '';
+                        cartId = '';
+                    },
+                    isInitialized () {
+                        return hostedFieldsApi !== null;
+                    },
+                    loadHostedFieldsLib () {
+                        if (typeof window.dalenys !== 'undefined') {
+                            return Promise.resolve();
+                        }
+
+                        return new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.type = 'text/javascript';
+                            script.src =  '<?= $escaper->escapeJs($hostedFieldsPaymentUrl) ?>';
+                            script.async = true;
+                            script.onload = resolve;
+                            script.onerror = reject;
+                            document.head.appendChild(script);
+                        });
+                    },
+                    initPaymentForm () {
+                        if (this.isInitialized()) {
+                            return false;
+                        }
+
+                        let lang = this.locale.split('_')[0];
+
+                        if (!this.availableLanguages.includes(lang)) {
+                            lang = 'fr';
+                        }
+
+                        const hostedFieldsConfig = {
+                            key: {
+                                id: this.apiKeyId,
+                                value: this.apiKey,
+                            },
+                            theme: {
+                                mode: 'light'
+                            },
+                            fields: {
+                                brand: {
+                                    id: 'brand-container',
+                                    version: 2,
+                                    useInlineSelection: false,
+                                    isCbPreferredNetwork: true
+                                },
+                                card: {
+                                    id: 'pan-input-container',
+                                    placeholder: '•••• •••• •••• ••••',
+                                    enableAutospacing: true,
+                                    style: this.inputStyles,
+                                    onInput: (event) => paymentMethod.handleFieldInput(event),
+                                    onFocus: (event) => paymentMethod.handleFieldFocus(event),
+                                    onBlur: (event) => paymentMethod.handleFieldBlur(event),
+                                },
+                                expiry: {
+                                    id: 'exp-input-container',
+                                    placeholder: '<?= $escaper->escapeJs(__('MM/YY')) ?>',
+                                    style: this.inputStyles,
+                                    onInput: (event) => paymentMethod.handleFieldInput(event),
+                                    onFocus: (event) => paymentMethod.handleFieldFocus(event),
+                                    onBlur: (event) => paymentMethod.handleFieldBlur(event),
+                                },
+                                cryptogram: {
+                                    id: 'cvv-input-container',
+                                    placeholder: 'CVV',
+                                    style: this.inputStyles,
+                                    onInput: (event) => paymentMethod.handleFieldInput(event),
+                                    onFocus: (event) => paymentMethod.handleFieldFocus(event),
+                                    onBlur: (event) => paymentMethod.handleFieldBlur(event),
+                                },
+                            },
+                            location: lang,
+                        };
+
+                        hostedFieldsApi = dalenys.hostedFields(hostedFieldsConfig);
+                        hostedFieldsApi.load();
+
+                        ['input', 'blur'].forEach(event => {
+                            document.getElementById('cardholder')?.addEventListener(event, this.validateCardholder);
+                        });
+
+                        this.bindPaymentFormToggle();
+
+                        return true;
+                    },
+                    bindPaymentFormToggle () {
+                        const paymentForm = document.querySelector('#payplug-payment-form');
+                        const otherCard = document.querySelector('#other-card');
+                        const radios = document.querySelectorAll('input[name="payment[payplug_payments_standard][customer_card_id]"]');
+
+                        if (paymentForm === null || otherCard === null) {
+                            return;
+                        }
+
+                        radios.forEach(radio => {
+                            radio.addEventListener('change', () => {
+                                paymentForm.classList.toggle('-hide', !otherCard.checked);
+                            });
+                        });
+                    },
+                    renderFieldState (containerId, state) {
+                        const container = document.getElementById(containerId);
+                        const errorContainer = document.querySelector(`.error-container.${containerId}`);
+
+                        if (container === null || errorContainer === null) {
+                            return;
+                        }
+
+                        const invalidField = errorContainer.querySelector('.invalid-field');
+                        const emptyField = errorContainer.querySelector('.empty-field');
+
+                        container.classList.remove('error-empty', 'error-invalid');
+                        invalidField.style.display = '';
+                        emptyField.style.display = '';
+
+                        if (state === 'empty') {
+                            container.classList.add('error-empty');
+                            invalidField.style.display = 'none';
+                        } else if (state === 'invalid') {
+                            container.classList.add('error-invalid');
+                            emptyField.style.display = 'none';
+                        }
+                    },
+                    getFieldState (field) {
+                        if (field.disabled || field.length === null) {
+                            return 'valid';
+                        }
+
+                        if (field.length === 0) {
+                            return 'empty';
+                        }
+
+                        return field.state === 'valid' ? 'valid' : 'invalid';
+                    },
+                    handleFieldInput (event) {
+                        const field = hostedFields[event.element];
+
+                        if (field === undefined) {
+                            return;
+                        }
+
+                        if (event.type === 'disabled' || event.type === 'enabled') {
+                            field.disabled = event.type === 'disabled';
+
+                            return;
+                        }
+
+                        if (typeof event.valueLength === 'number') {
+                            field.length = event.valueLength;
+                            field.filled = field.filled || event.valueLength > 0;
+                        }
+
+                        if (['empty', 'valid', 'invalid'].includes(event.type)) {
+                            field.state = event.type;
+                            field.reported = true;
+                        }
+
+                        if (field.focused || !field.filled) {
+                            paymentMethod.renderFieldState(field.container, 'valid');
+
+                            return;
+                        }
+
+                        paymentMethod.renderFieldState(field.container, paymentMethod.getFieldState(field));
+                    },
+                    handleFieldFocus (event) {
+                        const field = hostedFields[event.element];
+
+                        if (field === undefined) {
+                            return;
+                        }
+
+                        field.focused = true;
+                    },
+                    handleFieldBlur (event) {
+                        const field = hostedFields[event.element];
+
+                        if (field === undefined) {
+                            return;
+                        }
+
+                        field.focused = false;
+
+                        if (typeof event.valueLength === 'number') {
+                            field.length = event.valueLength;
+                            field.filled = field.filled || event.valueLength > 0;
+                        }
+
+                        if (field.filled) {
+                            paymentMethod.renderFieldState(field.container, paymentMethod.getFieldState(field));
+                        }
+                    },
+                    clearHostedFieldsErrors () {
+                        Object.values(hostedFields).forEach(field => {
+                            paymentMethod.renderFieldState(field.container, 'valid');
+                        });
+                    },
+                    renderHostedFieldsErrors (scope) {
+                        return Object.values(hostedFields).reduce((hasError, field) => {
+                            const state = field[scope] ? paymentMethod.getFieldState(field) : 'valid';
+
+                            paymentMethod.renderFieldState(field.container, state);
+
+                            return hasError || state !== 'valid';
+                        }, false);
+                    },
+                    validateCardholder () {
+                        const value = (document.getElementById('cardholder')?.value || '').trim();
+                        let state = 'valid';
+
+                        if (value === '') {
+                            state = 'empty';
+                        } else if (!/^[a-zA-ZÀ-ÿ]+(?:[ '\-][a-zA-ZÀ-ÿ]+)+$/.test(value)) {
+                            state = 'invalid';
+                        }
+
+                        paymentMethod.renderFieldState('cardholder-input-container', state);
+
+                        return state === 'valid';
+                    },
+                    validate: async function() {
+                        const cancelUrl = BASE_URL + 'payplug_payments/payment/cancel';
+                        const returnUrl = BASE_URL + 'payplug_payments/payment/paymentReturn';
+                        const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
+
+                        if (payplugCards.length > 0 && isOneClick) {
+                            const selectedInput = document.querySelector('input[name="payment[payplug_payments_standard][customer_card_id]"]:checked') || null;
+                            cartId = selectedInput?.dataset?.cardId || '';
+                        }
+
+                        hostedFieldsToken = '';
+                        hostedFieldsSelectedBrand = '';
+
+                        if (cartId === '') {
+                            paymentMethod.clearHostedFieldsErrors();
+
+                            Object.values(hostedFields).forEach(field => {
+                                field.reported = false;
+                            });
+
+                            const isTokenCreated = await new Promise(resolve => {
+                                hostedFieldsApi.createToken(function (result) {
+                                    magewire.plugins.loader.stop();
+
+                                    if (result.execCode !== '0000') {
+                                        resolve(false);
+                                        return;
+                                    }
+
+                                    hostedFieldsToken = result.hfToken;
+                                    hostedFieldsSelectedBrand = result.selectedBrand;
+                                    resolve(true);
+                                });
+                            });
+
+                            const hasFieldErrors = !isTokenCreated && paymentMethod.renderHostedFieldsErrors('reported');
+                            const isCardholderValid = paymentMethod.validateCardholder();
+
+                            if (!isTokenCreated) {
+                                if (!hasFieldErrors && isCardholderValid) {
+                                    window.dispatchMessages([
+                                        {
+                                            type: 'error',
+                                            text: '<?= $escaper->escapeJs(__('The transaction was aborted and your card has not been charged')) ?>'
+                                        }
+                                    ], 2000);
+                                }
+
+                                return false;
+                            }
+
+                            if (!isCardholderValid) {
+                                return false;
+                            }
+                        }
+
+                        hyvaCheckout.evaluation.registerExecutable('make:pay-plug:payment', async () => {
+                            try {
+                                magewire.plugins.loader.start();
+
+                                const response = await fetch(`${redirectUrl}?should_redirect=0&has_payment_form=1`);
+                                const { payment_id, error, message, url, url_post_params } = await response.json();
+
+                                if (error) {
+                                    window.dispatchMessages([{ type: 'error', text: message }], 2000);
+                                    window.location.replace(cancelUrl);
+                                    return;
+                                }
+
+                                if (!payment_id) {
+                                    window.location.replace(returnUrl);
+                                    return;
+                                }
+
+                                if (url && url_post_params) {
+                                    const redirectForm = document.createElement('form');
+                                    redirectForm.method = 'POST';
+                                    redirectForm.action = url;
+
+                                    url_post_params.split('&').forEach(pair => {
+                                        const separator = pair.indexOf('=');
+
+                                        if (separator < 1) {
+                                            return;
+                                        }
+
+                                        const input = document.createElement('input');
+                                        input.type = 'hidden';
+                                        input.name = pair.slice(0, separator);
+                                        input.value = pair.slice(separator + 1);
+                                        redirectForm.appendChild(input);
+                                    });
+
+                                    document.body.appendChild(redirectForm);
+                                    redirectForm.submit();
+                                    return;
+                                }
+
+                                if (url) {
+                                    window.location.replace(url);
+                                    return;
+                                }
+
+                                window.location.replace(returnUrl);
+                            } catch (error) {
+                                window.location.replace(cancelUrl);
+                                throw error;
+                            }
+                        });
+
+                        saveCard = cartId === '' && document.querySelector('#payplug_save_card')?.checked === true;
+                        cardHolder = document.getElementById('cardholder')?.value || '';
+
+                        await Magewire.find('checkout.payment.method.payplug_payments_standard').call(
+                            'setHostedFieldsAdditionalData',
+                            hostedFieldsToken,
+                            hostedFieldsSelectedBrand,
+                            saveCard,
+                            cardHolder,
+                            cartId
+                        );
+
+                        return true;
+                    }
+                }
+            });
+        });
+    })();
+</script>
+
+<?php $hyvaCsp->registerInlineScript() ?>
