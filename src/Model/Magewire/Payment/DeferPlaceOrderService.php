@@ -13,18 +13,31 @@ use Hyva\Checkout\Model\Magewire\Component\EvaluationResultFactory;
 use Hyva\Checkout\Model\Magewire\Component\EvaluationResultInterface;
 use Hyva\Checkout\Model\Magewire\Payment\AbstractPlaceOrderService;
 use Magento\Quote\Api\CartManagementInterface;
+use Magento\Quote\Api\Data\PaymentInterface;
+use Magento\Quote\Api\Data\PaymentInterfaceFactory;
 use Magento\Quote\Model\Quote;
 use Magento\Sales\Api\OrderRepositoryInterface;
+use Payplug\Payments\Api\Data\OrderPaymentInterface;
 use Payplug\Payments\Helper\Config;
 
 class DeferPlaceOrderService extends AbstractPlaceOrderService
 {
+    private const HF_ADDITIONAL_DATA_KEYS = [
+        OrderPaymentInterface::HF_CARD_ID_KEY,
+        OrderPaymentInterface::HF_PAYMENT_KEY,
+        OrderPaymentInterface::HF_TOKEN_KEY,
+        OrderPaymentInterface::HF_BRAND_KEY,
+        OrderPaymentInterface::HF_SAVE_CARD_KEY,
+        OrderPaymentInterface::HF_CARD_HOLDER_KEY,
+    ];
+
     protected $oneclick = false;
 
     public function __construct(
         protected CartManagementInterface $cartManagement,
         protected OrderRepositoryInterface $orderRepository,
-        protected Config $payplugConfig
+        protected Config $payplugConfig,
+        protected PaymentInterfaceFactory $paymentFactory
     ) {
         parent::__construct($cartManagement);
     }
@@ -62,12 +75,25 @@ class DeferPlaceOrderService extends AbstractPlaceOrderService
 
     public function placeOrder(Quote $quote): int
     {
-        $payment = $quote->getPayment()->getAdditionalInformation();
-        if (!empty($payment["payplug_payments_customer_card_id"])) {
+        $payment = $quote->getPayment();
+        $additionalInformation = $payment->getAdditionalInformation();
+        $isHostedFieldsPayment = !empty($additionalInformation[OrderPaymentInterface::HF_PAYMENT_KEY]);
+
+        if ($isHostedFieldsPayment === false && !empty($additionalInformation[OrderPaymentInterface::HF_CARD_ID_KEY])) {
             $this->oneclick = true;
         }
 
-        return (int)$this->cartManagement->placeOrder($quote->getId(), $quote->getPayment());
+        $paymentMethod = $this->paymentFactory->create([
+            'data' => [
+                PaymentInterface::KEY_METHOD => $payment->getMethod(),
+                PaymentInterface::KEY_ADDITIONAL_DATA => array_intersect_key(
+                    $additionalInformation,
+                    array_flip(self::HF_ADDITIONAL_DATA_KEYS)
+                ),
+            ],
+        ]);
+
+        return (int)$this->cartManagement->placeOrder($quote->getId(), $paymentMethod);
     }
 
     public function evaluateCompletion(EvaluationResultFactory $resultFactory, ?int $orderId = null): EvaluationResultInterface
