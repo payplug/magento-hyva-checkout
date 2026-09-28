@@ -12,7 +12,7 @@ use Payplug\PaymentsHyvaCheckout\Block\Standard as BlockStandard;
 /** @var BlockStandard $block */
 
 $config = $block->getConfig();
-$paymentConfig = $config['payment'];
+$paymentConfig = $config['payment'] ?? [];
 $isHostedFieldsActive = $paymentConfig['payplug_payments_standard']['is_hosted_fields_active'] ?? false;
 ?>
 
