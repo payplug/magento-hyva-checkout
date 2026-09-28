@@ -17,6 +17,7 @@ use Payplug\Payments\ViewModel\UrlProvider;
 /** @var HyvaCsp $hyvaCsp */
 /** @var Template $block */
 /** @var UrlProvider $urlProvider */
+/** @var ViewModelRegistry $viewModels */
 
 $urlProvider = $viewModels->require(UrlProvider::class);
 ?>
@@ -74,10 +75,16 @@ $urlProvider = $viewModels->require(UrlProvider::class);
 
                                 session.onpaymentauthorized = event => {
                                     const body = new URLSearchParams({
-                                        form_key: hyva.getFormKey(),
-                                        token: JSON.stringify(event.payment.token)
+                                        form_key: hyva.getFormKey()
                                     });
-                                    fetch('<?= $escaper->escapeUrl($block->getUrl("hyva_checkout_payplug/applepay/updateTransaction")); ?>', {
+
+                                    const appendTokenParam = (key, value) => value instanceof Object
+                                        ? Object.entries(value).forEach(([name, item]) => appendTokenParam(`${key}[${name}]`, item))
+                                        : body.append(key, value ?? '');
+
+                                    appendTokenParam('token', event.payment.token);
+
+                                    fetch('<?= $escaper->escapeUrl($block->getUrl("payplug_payments/applepay/updateTransaction")); ?>', {
                                         method: 'POST',
                                         credentials: "include",
                                         body,
@@ -115,11 +122,11 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                         return ApplePaySession.supportsVersion(14) ? 14 : 3;
                     },
                     getApplePaySessionRequest: function() {
-                        const { 
-                            domain, 
-                            merchantName, 
-                            shippingCountryId, 
-                            total 
+                        const {
+                            domain,
+                            merchantName,
+                            shippingCountryId,
+                            total
                         } = this.applePayPaymentData;
 
                         return {
