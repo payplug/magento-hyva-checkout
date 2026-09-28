@@ -20,7 +20,7 @@ use Payplug\Payments\ViewModel\UrlProvider;
 /** @var UrlProvider $urlProvider */
 
 $config = $block->getConfig();
-$paymentConfig = $config['payment'];
+$paymentConfig = $config['payment'] ?? [];
 $payplugCards = $block->getPayplugCards();
 
 $isIntegrated = false;
