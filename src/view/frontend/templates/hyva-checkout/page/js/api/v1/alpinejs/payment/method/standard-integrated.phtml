@@ -27,12 +27,14 @@ $isIntegrated = false;
 $isOneClick = false;
 $isPopup = false;
 $isRedirected = false;
+$isSandbox = false;
 
-if (isset($paymentConfig["payplug_payments_standard"])) {
-    $isIntegrated = $paymentConfig["payplug_payments_standard"]["is_integrated"];
-    $isOneClick = $paymentConfig["payplug_payments_standard"]["is_one_click"];
-    $isPopup = $paymentConfig["payplug_payments_standard"]["is_embedded"];
+if (isset($paymentConfig['payplug_payments_standard'])) {
+    $isIntegrated = $paymentConfig['payplug_payments_standard']['is_integrated'];
+    $isOneClick = $paymentConfig['payplug_payments_standard']['is_one_click'];
+    $isPopup = $paymentConfig['payplug_payments_standard']['is_embedded'];
     $isRedirected = !$isPopup && !$isIntegrated;
+    $isSandbox = (bool) ($paymentConfig['payplug_payments_standard']['is_sandbox'] ?? false);
 }
 
 $urlProvider = $viewModels->require(UrlProvider::class);
@@ -49,7 +51,7 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                 isOneClick: <?= $isOneClick ? 'true' : 'false' ?>,
                 isPopup: <?= $isPopup ? 'true' : 'false' ?>,
                 isRedirected: <?= $isRedirected ? 'true' : 'false' ?>,
-                isSandbox: ''
+                isSandbox: <?= $isSandbox ? 'true' : 'false' ?>
             };
 
             hyvaCheckout.payment.registerMethod({
