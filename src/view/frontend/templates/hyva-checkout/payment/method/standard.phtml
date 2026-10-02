@@ -98,142 +98,144 @@ if ($selectedCardId === '' && $isHostedFieldsActive && $isOneClick && !empty($pa
             </ul>
         <?php endif; ?>
 
-        <div id="payplug-payment-form"
-             class="payplug pp-integrated-payment -loaded <?= !empty($payplugCards) && $isOneClick ? 'ml-[46px] pt-3' . ($selectedCardId === '' ? '' : ' -hide') : '' ?>"
-             wire:ignore>
-            <div id="cardholder-input-container" class="payplug pp-integrated-payment_container -cardHolder cardHolder-input-container" data-e2e-name="cardHolder">
-                <?php if ($isHostedFieldsActive) : ?>
-                    <input type="text" autocomplete="cc-name" autocorrect="off" autocapitalize="characters" spellcheck="false" class="cardholder required-entry" name="cardholder" id="cardholder" maxlength="45" placeholder="<?= $escaper->escapeHtmlAttr(__('Payplug Card Holder placeholder')); ?>">
-                <?php endif; ?>
-            </div>
-            <div class="error-container cardholder-input-container">
-                <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid Name and/or Last Name.')); ?></span></div>
-                <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
-            </div>
-            <div class="payplug pp-integrated-payment_container -scheme">
-                <div>
-                    <?= $escaper->escapeHtml(__('Your card')); ?>
+        <?php if ($isIntegrated || $isHostedFieldsActive) : ?>
+            <div id="payplug-payment-form"
+                 class="payplug pp-integrated-payment -loaded <?= !empty($payplugCards) && $isOneClick ? 'ml-[46px] pt-3' . ($selectedCardId === '' ? '' : ' -hide') : '' ?>"
+                 wire:ignore>
+                <div id="cardholder-input-container" class="payplug pp-integrated-payment_container -cardHolder cardHolder-input-container" data-e2e-name="cardHolder">
+                    <?php if ($isHostedFieldsActive) : ?>
+                        <input type="text" autocomplete="cc-name" autocorrect="off" autocapitalize="characters" spellcheck="false" class="cardholder required-entry" name="cardholder" id="cardholder" maxlength="45" placeholder="<?= $escaper->escapeHtmlAttr(__('Payplug Card Holder placeholder')); ?>">
+                    <?php endif; ?>
                 </div>
-                <?php if ($block->canDisplayCardsLogo()) : ?>
-                <div x-data="standardPayment"
-                     class="flex justify-between items-center flex-wrap w-[115px]">
-                    <label class="hover:cursor-pointer">
-                        <span class="sr-only">Visa</span>
-                        <span :class="visaCardClass" x-cloak>
-                            <?= $icons->renderHtml('visa', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
-                        </span>
-                        <span :class="visaCardDarkClass">
-                            <?= $icons->renderHtml('visa-dark', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
-                        </span>
-                        <input type="radio"
-                               class="sr-only"
-                               name="schemeOptions"
-                               value="visa"
-                               :value="currentCard"
-                               @change="handleInputChange()" />
-                    </label>
-                    <label class="hover:cursor-pointer">
-                        <span class="sr-only">Mastercard</span>
-                        <span :class="masterCardClass" x-cloak>
-                            <?= $icons->renderHtml('mastercard', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
-                        </span>
-                        <span :class="masterCardDarkClass">
-                            <?= $icons->renderHtml('mastercard-dark', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
-                        </span>
-                        <input type="radio"
-                               class="sr-only"
-                               name="schemeOptions"
-                               value="mastercard"
-                               :value="currentCard"
-                               @change="handleInputChange()" />
-                    </label>
-                    <label class="hover:cursor-pointer">
-                        <span class="sr-only">
-                            <?= $escaper->escapeHtml($storeCode === 'it_IT' ? 'PostePay' : 'CB') ?>
-                        </span>
-                        <span :class="cbCardClass" x-cloak>
-                            <?= $icons->renderHtml($cbName, 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
-                        </span>
-                        <span :class="cbCardDarkClass">
-                        <?= $icons->renderHtml($cbName . '-dark', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
-                        </span>
-                        <input type="radio"
-                               class="sr-only"
-                               name="schemeOptions"
-                               value="cb"
-                               :value="currentCard"
-                               @change="handleInputChange()" />
-                    </label>
+                <div class="error-container cardholder-input-container">
+                    <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid Name and/or Last Name.')); ?></span></div>
+                    <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
                 </div>
-                <?php endif; ?>
-            </div>
-            <div id="pan-input-container" class="payplug pp-integrated-payment_container -pan pan-input-container" data-e2e-name="pan">
-                <?php if ($isHostedFieldsActive) : ?>
-                    <div id="brand-container"></div>
-                <?php endif; ?>
-            </div>
-            <div class="error-container pan-input-container">
-                <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid card number.')); ?></span></div>
-                <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
-            </div>
-            <div class="exp-cvv-container">
-                <div class="flex-1">
-                    <div id="exp-input-container" class="payplug pp-integrated-payment_container -exp exp-input-container" data-e2e-name="expiration"></div>
-                    <div class="error-container exp-input-container">
-                        <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid expiration date.')); ?></span></div>
-                        <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
+                <div class="payplug pp-integrated-payment_container -scheme">
+                    <div>
+                        <?= $escaper->escapeHtml(__('Your card')); ?>
+                    </div>
+                    <?php if ($block->canDisplayCardsLogo()) : ?>
+                    <div x-data="standardPayment"
+                         class="flex justify-between items-center flex-wrap w-[115px]">
+                        <label class="hover:cursor-pointer">
+                            <span class="sr-only">Visa</span>
+                            <span :class="visaCardClass" x-cloak>
+                                <?= $icons->renderHtml('visa', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
+                            </span>
+                            <span :class="visaCardDarkClass">
+                                <?= $icons->renderHtml('visa-dark', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
+                            </span>
+                            <input type="radio"
+                                   class="sr-only"
+                                   name="schemeOptions"
+                                   value="visa"
+                                   :value="currentCard"
+                                   @change="handleInputChange()" />
+                        </label>
+                        <label class="hover:cursor-pointer">
+                            <span class="sr-only">Mastercard</span>
+                            <span :class="masterCardClass" x-cloak>
+                                <?= $icons->renderHtml('mastercard', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
+                            </span>
+                            <span :class="masterCardDarkClass">
+                                <?= $icons->renderHtml('mastercard-dark', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
+                            </span>
+                            <input type="radio"
+                                   class="sr-only"
+                                   name="schemeOptions"
+                                   value="mastercard"
+                                   :value="currentCard"
+                                   @change="handleInputChange()" />
+                        </label>
+                        <label class="hover:cursor-pointer">
+                            <span class="sr-only">
+                                <?= $escaper->escapeHtml($storeCode === 'it_IT' ? 'PostePay' : 'CB') ?>
+                            </span>
+                            <span :class="cbCardClass" x-cloak>
+                                <?= $icons->renderHtml($cbName, 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
+                            </span>
+                            <span :class="cbCardDarkClass">
+                            <?= $icons->renderHtml($cbName . '-dark', 'w-payment-card h-payment-card', 33, 22, ['aria-hidden' => 'true']); ?>
+                            </span>
+                            <input type="radio"
+                                   class="sr-only"
+                                   name="schemeOptions"
+                                   value="cb"
+                                   :value="currentCard"
+                                   @change="handleInputChange()" />
+                        </label>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <div id="pan-input-container" class="payplug pp-integrated-payment_container -pan pan-input-container" data-e2e-name="pan">
+                    <?php if ($isHostedFieldsActive) : ?>
+                        <div id="brand-container"></div>
+                    <?php endif; ?>
+                </div>
+                <div class="error-container pan-input-container">
+                    <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid card number.')); ?></span></div>
+                    <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
+                </div>
+                <div class="exp-cvv-container">
+                    <div class="flex-1">
+                        <div id="exp-input-container" class="payplug pp-integrated-payment_container -exp exp-input-container" data-e2e-name="expiration"></div>
+                        <div class="error-container exp-input-container">
+                            <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid expiration date.')); ?></span></div>
+                            <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <div id="cvv-input-container" class="payplug pp-integrated-payment_container -cvv cvv-input-container" data-e2e-name="cvv"></div>
+                        <div class="error-container cvv-input-container">
+                            <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid CVV.')); ?></span></div>
+                            <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="flex-1">
-                    <div id="cvv-input-container" class="payplug pp-integrated-payment_container -cvv cvv-input-container" data-e2e-name="cvv"></div>
-                    <div class="error-container cvv-input-container">
-                        <div class="invalid-field"><span><?= $escaper->escapeHtml(__('Invalid CVV.')); ?></span></div>
-                        <div class="empty-field"><span><?= $escaper->escapeHtml(__('Mandatory field.')); ?></span></div>
+                <?php if ($isOneClick) : ?>
+                    <div class="save-card-container">
+                        <input type="checkbox" name="save_card" id="payplug_save_card">
+                        <label for="payplug_save_card" class="inline align-middle"><?= $escaper->escapeHtml(__('Save my credit card')); ?></label>
                     </div>
+                <?php endif; ?>
+
+                <div class="transaction-secured">
+                    <img src="data:image/svg+xml,<?= rawurlencode($icons->renderHtml('lock')); ?>" alt="">
+                    <span><?= $escaper->escapeHtml(__('Transaction secured by')); ?></span>
+                    <img class="payplug-logo" src="data:image/svg+xml,<?= rawurlencode($icons->renderHtml('payplug')); ?>" alt="">
                 </div>
             </div>
-            <?php if ($isOneClick) : ?>
-                <div class="save-card-container">
-                    <input type="checkbox" name="save_card" id="payplug_save_card">
-                    <label for="payplug_save_card" class="inline align-middle"><?= $escaper->escapeHtml(__('Save my credit card')); ?></label>
-                </div>
-            <?php endif; ?>
 
-            <div class="transaction-secured">
-                <img src="data:image/svg+xml,<?= rawurlencode($icons->renderHtml('lock')); ?>" alt="">
-                <span><?= $escaper->escapeHtml(__('Transaction secured by')); ?></span>
-                <img class="payplug-logo" src="data:image/svg+xml,<?= rawurlencode($icons->renderHtml('payplug')); ?>" alt="">
-            </div>
-        </div>
+            <style>
+                .pp-integrated-payment_container.-cardHolder::before {
+                    mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('account')); ?>');
+                    -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('account')); ?>');
+                }
 
-        <style>
-            .pp-integrated-payment_container.-cardHolder::before {
-                mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('account')); ?>');
-                -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('account')); ?>');
-            }
+                .pp-integrated-payment_container.-pan::before {
+                    -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('card')); ?>');
+                    mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('card')); ?>');
+                }
 
-            .pp-integrated-payment_container.-pan::before {
-                -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('card')); ?>');
-                mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('card')); ?>');
-            }
+                .pp-integrated-payment_container.-exp,
+                .pp-integrated-payment_container.-cvv {
+                    display: block;
+                    max-width: calc(140px);
+                }
 
-            .pp-integrated-payment_container.-exp,
-            .pp-integrated-payment_container.-cvv {
-                display: block;
-                max-width: calc(140px);
-            }
+                .pp-integrated-payment_container.-cvv::before {
+                    mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('lock')); ?>');
+                    -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('lock')); ?>');
+                }
 
-            .pp-integrated-payment_container.-cvv::before {
-                mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('lock')); ?>');
-                -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('lock')); ?>');
-            }
-
-            .pp-integrated-payment_container.-exp::before {
-                mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('calendar')); ?>');
-                -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('calendar')); ?>');
-            }
-        </style>
+                .pp-integrated-payment_container.-exp::before {
+                    mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('calendar')); ?>');
+                    -webkit-mask-image: url('data:image/svg+xml,<?= rawurlencode($icons->renderHtml('calendar')); ?>');
+                }
+            </style>
+        <?php endif; ?>
 
         <div id="pp-standard-payment"></div>
     <?php endif; ?>

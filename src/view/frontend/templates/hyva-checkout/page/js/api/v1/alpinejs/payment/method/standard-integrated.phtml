@@ -163,10 +163,10 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                             radio.addEventListener('change', (event) => {
                                 if (otherCard.checked) {
                                     paymentOptions.isOneClick = false;
-                                    integratedPaymentForm.classList.remove('-hide');
+                                    integratedPaymentForm?.classList.remove('-hide');
                                 } else {
                                     paymentOptions.isOneClick = true;
-                                    integratedPaymentForm.classList.add('-hide');
+                                    integratedPaymentForm?.classList.add('-hide');
                                 }
                             });
                         });
