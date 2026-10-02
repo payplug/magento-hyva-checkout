@@ -192,7 +192,10 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                             if (paymentOptions.isIntegrated) {
                                 const validateForm = () =>
                                     new Promise((resolve, reject) => {
+                                        const timeout = setTimeout(() => reject(new Error('Payplug form validation timeout')), 5000);
+
                                         integratedPayment.onValidateForm(({ isFormValid }) => {
+                                            clearTimeout(timeout);
                                             isFormValid ? resolve() : reject();
                                         });
                                         integratedPayment.validateForm();
@@ -234,12 +237,20 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                                     }
                                 });
 
-                                <?php // Pre-validation ?>
-                                validateForm()
-                                    .then(() => hyvaCheckout.main.getWireComponent().placeOrder())
-                                    .catch(console.error);
+                                try {
+                                    await validateForm();
+                                } catch (error) {
+                                    if (error) {
+                                        window.dispatchMessages([{
+                                            type: 'error',
+                                            text: '<?= $escaper->escapeJs(__('Payplug Payments form could not load correctly')) ?>'
+                                        }], 2000);
+                                    }
 
-                                return;
+                                    return false;
+                                }
+
+                                return true;
                             }
 
                             if (paymentOptions.isRedirected) {
@@ -259,20 +270,22 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                                     redirectToCancelUrl();
                                 };
 
-                                await hyvaCheckout.main.getWireComponent().placeOrder();
+                                hyvaCheckout.evaluation.registerExecutable('make:pay-plug:payment', () =>
+                                    fetch(redirectUrl + '?should_redirect=0')
+                                        .then(response => response.json())
+                                        .then(({ is_paid, url }) => {
+                                            if (is_paid) {
+                                                window.location.replace(returnUrl);
+                                            } else if (url) {
+                                                Payplug.Form.showPayment(url, paymentOptions.isOneClick);
+                                            } else {
+                                                redirectToCancelUrl();
+                                            }
+                                        })
+                                        .catch(console.error)
+                                );
 
-                                fetch(redirectUrl + '?should_redirect=0')
-                                    .then(response => response.json())
-                                    .then(({ is_paid, url }) => {
-                                        if (is_paid) {
-                                            window.location.replace(returnUrl);
-                                        } else if (url) {
-                                            Payplug.Form.showPayment(url, paymentOptions.isOneClick);
-                                        } else {
-                                            redirectToCancelUrl();
-                                        }
-                                    })
-                                    .catch(console.error);
+                                return true;
                             }
                         }
                     }

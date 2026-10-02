@@ -37,8 +37,8 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                         this.loadApplePayApi().then(async () => {
                             if (this.checkLoadedAP()) {
                                 document.querySelector('apple-pay-button').addEventListener('click', () => {
-                                    hyvaCheckout.main.getWireComponent().placeOrder();
                                     this.initApplePay();
+                                    hyvaCheckout.order.place();
                                 });
 
                                 btnPlaceOrder = document.querySelector('.btn-place-order');
