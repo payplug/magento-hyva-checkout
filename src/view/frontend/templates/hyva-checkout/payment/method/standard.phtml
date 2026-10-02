@@ -36,12 +36,12 @@ $isRedirected = false;
 $isHostedFieldsActive = false;
 $selectedCardId = '';
 
-if (isset($paymentConfig["payplug_payments_standard"])) {
-    $isIntegrated = $paymentConfig["payplug_payments_standard"]["is_integrated"];
-    $isOneClick = $paymentConfig["payplug_payments_standard"]["is_one_click"];
-    $isPopup = $paymentConfig["payplug_payments_standard"]["is_embedded"];
+if (isset($paymentConfig['payplug_payments_standard'])) {
+    $isIntegrated = $paymentConfig['payplug_payments_standard']['is_integrated'];
+    $isOneClick = $paymentConfig['payplug_payments_standard']['is_one_click'];
+    $isPopup = $paymentConfig['payplug_payments_standard']['is_embedded'];
     $isHostedFieldsActive = $paymentConfig['payplug_payments_standard']['is_hosted_fields_active'];
-    $selectedCardId = (string) ($paymentConfig["payplug_payments_standard"]["selected_card_id"] ?? '');
+    $selectedCardId = (string) ($paymentConfig['payplug_payments_standard']['selected_card_id'] ?? '');
     $isRedirected = !$isPopup && !$isIntegrated;
 }
 
