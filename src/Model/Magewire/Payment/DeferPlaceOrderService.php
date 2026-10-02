@@ -99,7 +99,7 @@ class DeferPlaceOrderService extends AbstractPlaceOrderService
     public function evaluateCompletion(EvaluationResultFactory $resultFactory, ?int $orderId = null): EvaluationResultInterface
     {
 
-        if (!$this->payplugConfig->isIntegrated() || $this->oneclick) {
+        if ($this->isRedirect() || $this->oneclick) {
             return parent::evaluateCompletion($resultFactory, $orderId);
         }
 
