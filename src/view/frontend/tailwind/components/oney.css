@@ -13,34 +13,17 @@
 }
 
 .oney-payment {
-    @apply relative md:flex md:gap-4 md:justify-between md:overflow-hidden pl-11 pb-4 pr-4;
+    @apply flex flex-col gap-4 pb-4 md:flex-row;
 
     .field {
         @apply flex-1 mt-0;
 
-        &:nth-child(1),
-        &:nth-child(2) {
-            input {
-                &:checked {
-                    + label {
-                        .oney-option-prices {
-                            @apply flex;
-                        }
-
-                        .oney-option-title {
-                            @apply border-b-oney;
-                        }
-
-                        @apply md:border-oney md:after:opacity-100 md:bg-oney/20;
-                    } 
-                }
-            }
+        input:checked + label {
+            @apply border-oney bg-oney/20;
         }
 
-        &:nth-child(2) {
-            .oney-option-title {
-                @apply left-auto right-0 border-l-0;
-            }
+        input:focus-visible + label {
+            @apply ring-2 ring-oney;
         }
     }
 }
@@ -50,39 +33,11 @@
 }
 
 .oney-option {
-    @apply flex flex-col items-center h-full m-0 bg-white cursor-pointer md:p-6 md:border md:border-solid md:border-oney-lighter md:hover:border-oney md:after:hover:opacity-100;
+    @apply flex h-full m-0 p-4 bg-white border border-solid border-[#DCE0E8] cursor-pointer hover:border-oney;
 }
 
 .oney-option-title {
-    @apply flex flex-col justify-center items-center h-[90px] absolute top-0 left-0 w-1/2 p-3 bg-white border border-oney-lighter border-b-white border-b-[5px] text-sm font-medium md:static md:top-auto md:left-auto md:right-auto md:w-full md:pt-0 md:pb-[35px] md:px-0 md:bg-transparent md:border-0;
-}
-
-.oney-option-prices {
-    @apply hidden flex-col justify-between h-full w-full border p-4 md:flex md:border-0 md:p-0;
-
-    ul {
-        @apply flex flex-col h-full w-full text-oney-darker font-semibold m-0 pl-0;
-
-        li {
-            @apply flex justify-between flex-wrap leading-5 pt-0 pb-4 px-0 border-b border-b-oney-lighter;
-
-            & + li {
-                @apply px-0 py-4;
-            }
-
-            &:last-child {
-                @apply mt-auto mb-0 mx-0 pt-4 pb-0 px-0 border-0;
-            }
-
-            span {
-                @apply flex font-semibold max-w-[50%] first:font-medium;
-            }
-
-            small {
-                @apply block w-full;
-            }
-        }
-    }
+    @apply flex flex-col justify-center items-center w-full gap-2 text-sm font-medium text-center;
 }
 
 .oney-option-radio {
