@@ -8,67 +8,91 @@
 declare(strict_types=1);
 
 use Hyva\Theme\Model\ViewModelRegistry;
-use Payplug\PaymentsHyvaCheckout\ViewModel\PayplugIcons;
 use Magento\Framework\Escaper;
 use Magento\Framework\View\Element\Template;
-use Payplug\Payments\Block\Oney\Simulation;
-use Magento\Framework\Pricing\Helper\Data;
 use Payplug\Payments\Gateway\Config\OneyWithoutFees;
+use Payplug\Payments\ViewModel\Oney;
+use Payplug\PaymentsHyvaCheckout\Magewire\Oney as OneyMagewire;
+use Payplug\PaymentsHyvaCheckout\ViewModel\PayplugIcons;
 
 /** @var Escaper $escaper */
-/** @var Simulation $block */
 /** @var Template $block */
 /** @var ViewModelRegistry $viewModels */
+/** @var OneyMagewire $magewire */
 
-$hasError = false;
-$oneySimulation = $block->getOneySimulation();
-$message = $oneySimulation->getMessage();
-
-if (!$oneySimulation->getSuccess() || !empty($message)) {
-    $hasError = true;
-}
-
-$oneyType = $oneySimulation->getMethod();
-$isOneyWithoutFees = $oneySimulation->getMethod() === OneyWithoutFees::METHOD_CODE;
-$pricingHelper = $this->helper(Data::class);
+$oneyType = (string) $block->getData('method_code');
+$oneyViewModel = $viewModels->require(Oney::class);
+$config = $oneyViewModel->getConfig($oneyViewModel->getCartAmount(), $oneyType);
+$message = $magewire->getErrorMessage($config);
+$isOneyWithoutFees = $oneyType === OneyWithoutFees::METHOD_CODE;
 $icons = $viewModels->require(PayplugIcons::class);
-
-$oney3xLogo = $icons->renderHtml('oney/3x' . ($isOneyWithoutFees ? '-without-fees' : ''), '', 150, 32, ['aria-hidden' => 'true']);
-$oney4xLogo = $icons->renderHtml('oney/4x' . ($isOneyWithoutFees ? '-without-fees' : ''), '', 150, 32, ['aria-hidden' => 'true']);
+$label = __($isOneyWithoutFees ? 'Payment in %1 without fees' : 'Payment in %1');
 ?>
 
-<div wire:ignore>
-    <div id="message" class="text-payment-error font-medium text-sm"></div>
-    <div id="oney-payment" class="oney-payment oney-payment-open"></div>
-    <div class="payment-method-content"></div>
-    <span class="oney-popin <?php if ($hasError): ?>oney-popin-error<?php endif; ?>"></span>
-
-    <?php
-        $options = array_map(static function($option) use ($pricingHelper) {
-            $schedules = $option->getSchedules();
-            $keys = array_keys($schedules);
-
-            return [
-                'type' => $option->getType(),
-                'firstDeposit' => $pricingHelper->currency($option->getFirstDeposit(), true, false),
-                'totalAmount' => $pricingHelper->currency($option->getTotalAmount(), true, false),
-
-                'schedules' => array_map(static function($schedule, $i) use ($pricingHelper) {
-                    return [
-                        'amount' => $pricingHelper->currency($schedule->getAmount(), true, false),
-                    ];
-                }, $schedules, $keys),
-            ];
-        }, $oneySimulation->getOptions() ?? []);
-    ?>
-
-    <div id="pp-oney-payment"
-        data-label="<?= $escaper->escapeHtmlAttr(__($isOneyWithoutFees ? 'Payment in %1 without fees' : 'Payment in %1')) ?>"
-        data-has-error="<?= $escaper->escapeHtmlAttr($hasError ? 'true' : 'false') ?>"
-        data-message="<?= $escaper->escapeHtmlAttr($message) ?>"
-        data-options="<?= $escaper->escapeHtmlAttr(json_encode($options)) ?>"
-        data-type="<?= $escaper->escapeHtmlAttr($oneyType) ?>"
-        data-logo-three-times="<?= $escaper->escapeHtmlAttr($oney3xLogo) ?>"
-        data-logo-four-times="<?= $escaper->escapeHtmlAttr($oney4xLogo) ?>"
-    ></div>
+<div class="pl-11 pr-4 pb-4">
+    <?php if ($message !== ''): ?>
+        <div class="text-payment-error font-medium text-sm" data-oney-error>
+            <?= $escaper->escapeHtml($message) ?>
+        </div>
+    <?php else: ?>
+        <div id="pp-oney-payment"
+             data-label="<?= $escaper->escapeHtmlAttr($label) ?>"
+             data-config="<?= $escaper->escapeHtmlAttr($oneyViewModel->getJsConfig($config, false)) ?>"
+        >
+            <div wire:ignore>
+                <div class="oney-payment">
+                    <?php foreach ($config['options'] ?? [] as $option): ?>
+                        <?php $optionId = 'oney-option-' . $oneyType . '-' . $option ?>
+                        <div class="field">
+                            <input type="radio"
+                                   id="<?= $escaper->escapeHtmlAttr($optionId) ?>"
+                                   name="oney_type"
+                                   value="<?= $escaper->escapeHtmlAttr($option) ?>"
+                                   class="sr-only"
+                            />
+                            <label for="<?= $escaper->escapeHtmlAttr($optionId) ?>"
+                                   class="oney-option"
+                            >
+                                <span class="oney-option-title">
+                                    <?= /* @noEscape */ $icons->renderHtml(
+                                        'oney/' . $option . ($isOneyWithoutFees ? '-without-fees' : ''),
+                                        '',
+                                        150,
+                                        32,
+                                        ['aria-hidden' => 'true']
+                                    ) ?>
+                                    <?= $escaper->escapeHtml(
+                                        __($isOneyWithoutFees ? 'Payment in %1 at no cost' : 'Payment in %1', $option)
+                                    ) ?>
+                                </span>
+                            </label>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <p class="<?= empty($config['options']) ? '' : 'hidden ' ?>text-sm text-gray-500"
+                   role="status"
+                   data-oney-notice
+                >
+                    <?= $escaper->escapeHtml(__(
+                        'Your payment schedule simulation is temporarily unavailable. ' .
+                        'You will find this information at the payment stage.'
+                    )) ?>
+                </p>
+                <div class="relative" aria-busy="false" data-oney-widget>
+                    <div class="hidden" role="status" data-oney-loader>
+                        <div class="absolute inset-0 z-10 flex items-center justify-center">
+                            <span class="h-8 w-8 animate-spin rounded-full border-4 border-oney border-t-transparent">
+                            </span>
+                        </div>
+                        <span class="sr-only">
+                            <?= $escaper->escapeHtml(__('Loading the Oney payment schedule...')) ?>
+                        </span>
+                    </div>
+                    <div id="<?= $escaper->escapeHtmlAttr('oney-checkout-placeholder-' . $oneyType) ?>"
+                         data-oney-placeholder
+                    ></div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>

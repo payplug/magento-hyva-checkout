@@ -18,146 +18,302 @@ use Magento\Framework\View\Element\Template;
 
 <script>
     (() => {
+        const loadTimeout = 10000;
+        const widgetLoadingTimeout = 15000;
+        let widgetPromise = null;
+
+        function loadOneyMerchantApp(loaderUrl) {
+            if (widgetPromise !== null) {
+                return widgetPromise;
+            }
+
+            widgetPromise = new Promise((resolve, reject) => {
+                let isSettled = false;
+                let timer = null;
+
+                const settle = (callback, value) => {
+                    if (isSettled) {
+                        return;
+                    }
+
+                    isSettled = true;
+                    clearTimeout(timer);
+                    callback(value);
+                };
+
+                timer = setTimeout(() => {
+                    settle(reject, new Error('Oney widget loading timed out.'));
+                }, loadTimeout);
+
+                const initWidget = () => {
+                    if (isSettled) {
+                        return;
+                    }
+
+                    if (typeof window.loadOneyWidget !== 'function') {
+                        settle(reject, new Error('Oney widget loader is not available.'));
+
+                        return;
+                    }
+
+                    window.loadOneyWidget(() => {
+                        if (window.oneyMerchantApp) {
+                            settle(resolve, window.oneyMerchantApp);
+                        } else {
+                            settle(reject, new Error('Oney widget is not available.'));
+                        }
+                    });
+                };
+
+                if (typeof window.loadOneyWidget === 'function') {
+                    initWidget();
+
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = loaderUrl;
+                script.async = true;
+                script.onload = initWidget;
+                script.onerror = () => {
+                    settle(reject, new Error('Oney widget loader could not be loaded.'));
+                };
+
+                document.head.appendChild(script);
+            });
+
+            widgetPromise.catch(() => {
+                widgetPromise = null;
+            });
+
+            return widgetPromise;
+        }
+
         hyvaCheckout.api.after(() => {
-            let oneyType = '';
-            const oneyPayments = ['oney', 'oney_without_fees']; // To be dynamized later
+            const oneyPayments = ['oney', 'oney_without_fees'];
 
             oneyPayments.forEach((oneyPaymentType) => {
-                hyvaCheckout.payment.registerMethod({
-                    code: `payplug_payments_${oneyPaymentType}`,
-                    method: {
-                        initialize: async function () {
-                            const oneyEl = document.getElementById('pp-oney-payment');
-                            if (!oneyEl) return;
-                            this.oneyPaymentData = oneyEl.dataset;
-                            this.selectedOptionValue = '';
-                            oneyType = this.oneyPaymentData.type;
+                const oneyType = `payplug_payments_${oneyPaymentType}`;
+                const componentId = 'checkout.payment.method.' + oneyType;
 
-                            this.buildOneyOptions();
-                            this.bindOneyOptionsHandler();
-                            this.displayMessage();
-                        },
-                        buildOneyOptions: function () {
-                            const {
-                                options,
-                                type : oneyType,
-                                logoThreeTimes: logo3x,
-                                logoFourTimes: logo4x,
-                            } = this.oneyPaymentData;
+                const method = {
+                    isActive: false,
+                    widgetRenderId: 0,
+                    selectedOptionValue: '',
+                    preferredOption: '',
+                    initialize: async function () {
+                        method.isActive = true;
+                        method.selectedOptionValue = '';
+                        method.setup(method.preferredOption);
+                    },
+                    setup: function (preferredOption) {
+                        method.container = document.getElementById('pp-oney-payment');
 
-                            const parsedOptions = JSON.parse(options);
-
-                            parsedOptions.forEach(({ firstDeposit, schedules, totalAmount, type }) => {
-                                const htmlSchedulesTemplate = this.getHtmlSchedules(schedules);
-                                const logo = type === '3x' ? logo3x : logo4x;
-                                const title = "<?= $escaper->escapeJs(__('Payment in %1 at no cost')) ?>".replace('%1', type);
-                                
-                                const htmlTemplate = `
-                                    <div class="field">
-                                        <input type="radio" id="${type}" name="oney_type" value="${type}" class="sr-only" />
-                                        <label data-type="${type}" for="${type}" class="oney-option oney-option-${type}">
-                                            <div class="oney-option-title">
-                                                ${logo}
-                                                ${oneyType === 'payplug_payments_oney_without_fees' ? title : ''}
-                                            </div>
-                                            <div class="oney-option-prices">
-                                                <ul class="oney-option-list">
-                                                    <li>
-                                                        <span>Montant à payer à la commande</span>
-                                                        <span class="oney-option-price">${firstDeposit}</span>
-                                                    </li>
-                                                    ${htmlSchedulesTemplate}
-                                                    <li>
-                                                        <span>Total</span>
-                                                        <span class="oney-option-price">${totalAmount}</span>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </label>
-                                    </div>
-                                `;
-
-                                const template = document.createElement('template');
-                                template.innerHTML = htmlTemplate.trim();
-                                const node = template.content.firstElementChild;
-                                document.querySelector('#oney-payment').appendChild(node);
-                            });
-                        },
-                        bindOneyOptionsHandler: function () {
-                            document.addEventListener('click', (event) => {
-                                const isOption = event?.target?.attributes?.name?.nodeValue === 'oney_type';
-
-                                if (isOption) {
-                                    this.selectedOptionValue = event.target.id;
-                                    this.updatePlaceOrderButtonLabel();
-                                }
-                            });
-                        },
-                        displayMessage: function () {   
-                            const { message } = this.oneyPaymentData;
-                            
-                            if (message) {
-                                const messageEl = document.getElementById('message');
-                                if (messageEl) {
-                                    messageEl.textContent = message;
-                                }
-                            }
-                        },
-                        getHtmlSchedules: function (schedules) {
-                            let htmlSchedulesTemplate = ``;
-                            const step = 30;
-                            let days = step;
-
-                            for (const schedule of schedules) {
-                                const { amount } = schedule;
-                                const dueDate = '<?= $escaper->escapeJs(__('In %1 days', '%1')) ?>'.replace('%1', days);
-
-                                htmlSchedulesTemplate += `
-                                    <li>
-                                        <span>${dueDate}</span>
-                                        <span class="oney-option-price">${amount}</span>
-                                    </li>
-                                `;
-
-                                days += step;
-                            }
-
-                            return htmlSchedulesTemplate;
-                        },
-                        updatePlaceOrderButtonLabel: function () {
-                            const { label } = this.oneyPaymentData;
-
-                            const buttonLabel = this.selectedOptionValue
-                                ? label.replace('%1', this.selectedOptionValue)
-                                : '<?= $escaper->escapeJs(__('Place Order')) ?>';
-
-                            document.querySelector('.btn-place-order').innerText = buttonLabel;
-                        },
-                        uninitialize: async function () {
-                            this.selectedOptionValue = '';
-                            this.updatePlaceOrderButtonLabel();  
-                        },
-                        validate: async function() {
-                            const selectedRadio = document.querySelector('input[name="oney_type"]:checked');
-                            const selectedOptionValue = selectedRadio ? (selectedRadio.value || selectedRadio.id) : '';
-
-                            if (!selectedOptionValue) {
-                                return false;
-                            }
-
-                            try {
-                                const componentId = 'checkout.payment.method.' + oneyType;
-                                await Magewire.find(componentId).call('setOneyType', selectedOptionValue);
-                            } catch (e) {
-                                console.warn('Hyva Checkout Payplug Oney: Magewire setOneyType not available', e);
-                            }
-
-                            return new Promise(resolve => {
-                                resolve(true);    
-                            });
+                        if (!method.container) {
+                            return;
                         }
+
+                        method.rawConfig = method.container.dataset.config || '{}';
+
+                        try {
+                            method.config = JSON.parse(method.rawConfig);
+                        } catch (e) {
+                            method.config = {};
+                        }
+
+                        method.container.addEventListener('change', method.onOptionChange);
+
+                        const options = [...method.container.querySelectorAll('input[name="oney_type"]')];
+                        const option = options.find(input => input.value === preferredOption) || options[0];
+
+                        if (option) {
+                            option.checked = true;
+                            method.selectOption(option.value);
+                        }
+                    },
+                    teardown: function () {
+                        method.container?.removeEventListener('change', method.onOptionChange);
+
+                        method.clearWidget();
+                        method.container = null;
+                    },
+                    refresh: function () {
+                        const container = document.getElementById('pp-oney-payment');
+
+                        if (container === method.container
+                            && (!container || container.dataset.config === method.rawConfig)
+                        ) {
+                            return;
+                        }
+
+                        method.preferredOption = method.selectedOptionValue || method.preferredOption;
+
+                        method.teardown();
+                        method.selectedOptionValue = '';
+                        method.setup(method.preferredOption);
+                        method.updatePlaceOrderButtonLabel();
+                    },
+                    onOptionChange: function (event) {
+                        if (event.target.name === 'oney_type') {
+                            method.selectOption(event.target.value);
+                        }
+                    },
+                    selectOption: function (type) {
+                        method.selectedOptionValue = type;
+                        method.updatePlaceOrderButtonLabel();
+                        method.renderWidget();
+                    },
+                    getElement: function (name) {
+                        return method.container ? method.container.querySelector(`[data-oney-${name}]`) : null;
+                    },
+                    renderWidget: function () {
+                        const config = method.config;
+                        const code = (config.business_transaction_codes || {})[method.selectedOptionValue];
+                        const placeholder = method.getElement('placeholder');
+
+                        if (!config.is_enabled || !code || !placeholder) {
+                            method.showWidgetUnavailable();
+
+                            return;
+                        }
+
+                        const renderId = ++method.widgetRenderId;
+                        method.toggleNotice(false);
+                        method.startWidgetLoading();
+
+                        loadOneyMerchantApp(config.loader_url)
+                            .then((oneyMerchantApp) => {
+                                if (method.widgetRenderId !== renderId) {
+                                    return;
+                                }
+
+                                method.getElement('loader')?.classList.add('hidden');
+
+                                oneyMerchantApp.loadCheckoutSection({
+                                    options: {
+                                        country: config.country,
+                                        language: config.language,
+                                        merchant_guid: config.merchant_guid,
+                                        payment_amount: parseFloat(config.amount) || 0,
+                                        filter_by: 'business_transaction_code',
+                                        business_transaction_code: code,
+                                        checkout_placeholder: '#' + placeholder.id,
+                                        successCallback: () => {
+                                            if (method.widgetRenderId === renderId) {
+                                                method.stopWidgetLoading();
+                                            }
+                                        },
+                                        errorCallback: (status, response) => {
+                                            if (method.widgetRenderId === renderId) {
+                                                method.handleWidgetError(status + ' - ' + response);
+                                            }
+                                        }
+                                    }
+                                });
+                            })
+                            .catch((error) => {
+                                if (method.widgetRenderId === renderId) {
+                                    method.handleWidgetError(error);
+                                }
+                            });
+                    },
+                    startWidgetLoading: function () {
+                        const widget = method.getElement('widget');
+
+                        widget.style.minHeight = (widget.offsetHeight || 200) + 'px';
+                        widget.setAttribute('aria-busy', 'true');
+                        method.getElement('loader')?.classList.remove('hidden');
+
+                        clearTimeout(method.widgetLoadingTimer);
+                        method.widgetLoadingTimer = setTimeout(() => {
+                            method.showWidgetUnavailable();
+                        }, widgetLoadingTimeout);
+                    },
+                    stopWidgetLoading: function () {
+                        const widget = method.getElement('widget');
+
+                        clearTimeout(method.widgetLoadingTimer);
+                        method.getElement('loader')?.classList.add('hidden');
+
+                        if (widget) {
+                            widget.style.minHeight = '';
+                            widget.setAttribute('aria-busy', 'false');
+                        }
+                    },
+                    handleWidgetError: function (error) {
+                        console.warn('Oney widget error', error);
+
+                        method.showWidgetUnavailable();
+                    },
+                    showWidgetUnavailable: function () {
+                        method.clearWidget();
+                        method.toggleNotice(true);
+                    },
+                    clearWidget: function () {
+                        method.stopWidgetLoading();
+                        method.widgetRenderId++;
+                        method.getElement('placeholder')?.replaceChildren();
+                    },
+                    toggleNotice: function (isVisible) {
+                        method.getElement('notice')?.classList.toggle('hidden', !isVisible);
+                    },
+                    updatePlaceOrderButtonLabel: function () {
+                        const button = document.querySelector('.btn-place-order');
+
+                        if (!button) {
+                            return;
+                        }
+
+                        button.innerText = method.selectedOptionValue && method.container
+                            ? method.container.dataset.label.replace('%1', method.selectedOptionValue)
+                            : '<?= $escaper->escapeJs(__('Place Order')) ?>';
+                    },
+                    uninitialize: async function () {
+                        method.isActive = false;
+                        method.preferredOption = method.selectedOptionValue || method.preferredOption;
+                        method.teardown();
+                        method.selectedOptionValue = '';
+                        method.updatePlaceOrderButtonLabel();
+                    },
+                    validate: async function () {
+                        if (!method.selectedOptionValue) {
+                            const error = document.querySelector('[data-oney-error]');
+
+                            hyvaCheckout.message.dialog(error
+                                ? error.textContent.trim()
+                                : '<?= $escaper->escapeJs(__('Please select a payment option for Oney.')) ?>');
+
+                            return false;
+                        }
+
+                        try {
+                            await Magewire.find(componentId).call('setOneyType', method.selectedOptionValue);
+                        } catch (e) {
+                            console.warn('Hyva Checkout Payplug Oney: Magewire setOneyType not available', e);
+                        }
+
+                        return true;
                     }
+                };
+
+                hyvaCheckout.payment.registerMethod({
+                    code: oneyType,
+                    method: method
                 });
+
+                const hookMagewire = () => {
+                    Magewire.hook('message.processed', (message, component) => {
+                        if (method.isActive && component.id === componentId) {
+                            method.refresh();
+                        }
+                    });
+                };
+
+                if (window.Magewire) {
+                    hookMagewire();
+                } else {
+                    window.addEventListener('magewire:available', hookMagewire, {once: true});
+                }
             });
         });
     })();
