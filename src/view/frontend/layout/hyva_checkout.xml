@@ -33,10 +33,10 @@
                         <item name="icon" xsi:type="array">
                             <item name="src" xsi:type="string">Payplug_Payments::images/logos/bancontact.svg</item>
                             <item name="attributes" xsi:type="array">
-                                <item name="width" xsi:type="number">55</item>
-                                <item name="height" xsi:type="number">34</item>
+                                <item name="width" xsi:type="number">56</item>
+                                <item name="height" xsi:type="number">56</item>
                                 <item name="loading" xsi:type="string">lazy</item>
-                                <item name="alt" xsi:type="string">Bancontact</item>
+                                <item name="alt" xsi:type="string">Bancontact Card</item>
                             </item>
                         </item>
                     </argument>
