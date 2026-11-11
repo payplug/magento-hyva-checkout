@@ -24,22 +24,36 @@ $urlProvider = $viewModels->require(UrlProvider::class);
 <script>
     (() => {
         hyvaCheckout.api.after(() => {
+            const isApplePayEnabled = <?= $urlProvider->isApplePayEnabled() ? 'true' : 'false' ?>;
+            const cancelUrl = '<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')) ?>';
+            const isApplePayAvailable = () => !!window.ApplePaySession?.canMakePayments();
+            let isProcessing = false;
+            let applePayApiLoaded;
             let btnPlaceOrder;
 
-            hyvaCheckout.payment.registerMethod({
+            const applePayMethod = hyvaCheckout.payment.registerMethod({
                 code: 'payplug_payments_apple_pay',
                 method: {
                     initialize: async function () {
                         const appleEl = document.getElementById('pp-apple-pay-payment');
                         if (!appleEl) return;
-                        this.applePayPaymentData = appleEl.dataset;
 
                         this.loadApplePayApi().then(async () => {
                             if (this.checkLoadedAP()) {
-                                document.querySelector('apple-pay-button').addEventListener('click', () => {
-                                    this.initApplePay();
-                                    hyvaCheckout.order.place();
-                                });
+                                if (isApplePayAvailable()) {
+                                    document.querySelector('apple-pay-button').addEventListener('click', async () => {
+                                        if (isProcessing) return;
+
+                                        isProcessing = true;
+
+                                        try {
+                                            this.initApplePay();
+                                            await hyvaCheckout.order.place();
+                                        } finally {
+                                            isProcessing = false;
+                                        }
+                                    });
+                                }
 
                                 btnPlaceOrder = document.querySelector('.btn-place-order');
 
@@ -50,12 +64,12 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                         });
                     },
                     initApplePay: function() {
-                        if (!ApplePaySession) {
+                        if (!window.ApplePaySession) {
                             return;
                         }
 
                         const versionNumber = this.getApplePayVersion();
-                        const sessionRequest = this.getApplePaySessionRequest();
+                        const sessionRequest = this.getApplePaySessionRequest(versionNumber);
                         const session = new ApplePaySession(versionNumber, sessionRequest);
 
                         hyvaCheckout.evaluation.registerExecutable('make:pay-plug:payment', () => {
@@ -66,10 +80,13 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                         let res = await response.json();
                                         if (res.error === true) {
                                             window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
-                                            reject();
+                                            resolve();
                                         } else {
                                             session.completeMerchantValidation(res.merchand_data);
                                         }
+                                    }).catch(() => {
+                                        window.location.replace(cancelUrl);
+                                        resolve();
                                     });
                                 };
 
@@ -102,16 +119,20 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                         });
                                         if (res.error === true) {
                                             window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
-                                            reject();
+                                            resolve();
                                         } else {
                                             window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/paymentReturn')); ?>');
                                             resolve();
                                         }
+                                    }).catch(() => {
+                                        window.location.replace(cancelUrl);
+                                        resolve();
                                     });
                                 };
 
                                 session.oncancel = event => {
                                     window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                                    resolve();
                                 };
 
                                 session.begin();
@@ -121,19 +142,21 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                     getApplePayVersion: function() {
                         return ApplePaySession.supportsVersion(14) ? 14 : 3;
                     },
-                    getApplePaySessionRequest: function() {
+                    getApplePaySessionRequest: function(versionNumber) {
                         const {
                             domain,
                             merchantName,
-                            shippingCountryId,
+                            merchantCountryId,
                             total
-                        } = this.applePayPaymentData;
+                        } = document.getElementById('pp-apple-pay-payment').dataset;
 
                         return {
-                            "countryCode": shippingCountryId,
+                            "countryCode": merchantCountryId,
                             "currencyCode": 'EUR',
                             "merchantCapabilities": ["supports3DS"],
-                            "supportedNetworks": ["visa", "masterCard"],
+                            "supportedNetworks": versionNumber >= 4
+                                ? ['cartesBancaires', 'visa', 'masterCard']
+                                : ['visa', 'masterCard'],
                             "total": {
                                 "label": merchantName,
                                 "type": "final",
@@ -145,7 +168,7 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                         };
                     },
                     loadApplePayApi: function() {
-                        return new Promise(resolve => {
+                        applePayApiLoaded = applePayApiLoaded || new Promise(resolve => {
                             const script = document.createElement('script');
                             script.type = 'text/javascript';
                             script.src =  '<?= $escaper->escapeJs($urlProvider->getApplePaySdkUrl()) ?>';
@@ -153,15 +176,30 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                             script.onload = resolve;
                             document.head.appendChild(script);
                         });
+
+                        return applePayApiLoaded;
                     },
                     checkLoadedAP: function() {
                         return document.body.contains(document.querySelector('apple-pay-button'));
                     },
                     uninitialize: async function () {
+                        if (!btnPlaceOrder) return;
+
                         btnPlaceOrder.disabled = false;
                     }
                 }
             });
+
+            if (isApplePayEnabled) {
+                applePayMethod.loadApplePayApi().then(() => {
+                    if (isApplePayAvailable()) return;
+
+                    // <head> rule: survives Magewire morphs and steps rendered later
+                    const style = document.createElement('style');
+                    style.textContent = '#payment-method-option-payplug_payments_apple_pay {display: none !important}';
+                    document.head.appendChild(style);
+                });
+            }
         });
     })();
 </script>

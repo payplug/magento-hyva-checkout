@@ -16,15 +16,15 @@ use Magento\Framework\Escaper;
 /** @var Escaper $escaper */
 ?>
 
-<div wire:ignore>
-    <apple-pay-button 
+<div>
+    <apple-pay-button wire:ignore
         buttonstyle="black" 
         type="pay" 
-        locale="en"
+        locale="<?= $escaper->escapeHtmlAttr($block->getConfig()['payment']['payplug_payments_apple_pay']['locale']); ?>"
     ></apple-pay-button>
 
     <div id="pp-apple-pay-payment"
-         data-shipping-country-id="<?= $escaper->escapeHtmlAttr($magewire->getShipping()->getShippingAddress()->getCountryId()); ?>"
+         data-merchant-country-id="<?= $escaper->escapeHtmlAttr($block->getMerchantCountryId()); ?>"
          data-shipping-currrency="<?= $escaper->escapeHtmlAttr($magewire->getShipping()->getData('quote_currency_code')); ?>"
          data-merchant-name="<?= $escaper->escapeHtmlAttr($block->getConfig()['payment']['payplug_payments_apple_pay']['merchand_name']); ?>"
          data-total="<?= $escaper->escapeHtmlAttr($magewire->getShipping()->getData("grand_total")); ?>"
