@@ -65,7 +65,7 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                     fetch('<?= $escaper->escapeUrl($block->getUrl("payplug_payments/applepay/getTransactionData")); ?>').then(async response => {
                                         let res = await response.json();
                                         if (res.error === true) {
-                                            window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                                            this.cancelPayment();
                                             reject();
                                         } else {
                                             session.completeMerchantValidation(res.merchand_data);
@@ -101,7 +101,7 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                             "status": applePaySessionStatus
                                         });
                                         if (res.error === true) {
-                                            window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                                            this.cancelPayment();
                                             reject();
                                         } else {
                                             window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/paymentReturn')); ?>');
@@ -111,12 +111,17 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                 };
 
                                 session.oncancel = event => {
-                                    window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                                    this.cancelPayment();
                                 };
 
                                 session.begin();
                             });
                         });
+                    },
+                    cancelPayment: function() {
+                        const cancelUrl = new URL('<?= $escaper->escapeJs($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                        cancelUrl.searchParams.set('form_key', hyva.getFormKey());
+                        window.location.replace(cancelUrl.toString());
                     },
                     getApplePayVersion: function() {
                         return ApplePaySession.supportsVersion(14) ? 14 : 3;
