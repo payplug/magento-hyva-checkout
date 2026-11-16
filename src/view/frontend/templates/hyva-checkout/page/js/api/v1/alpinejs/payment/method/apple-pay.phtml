@@ -27,6 +27,9 @@ $urlProvider = $viewModels->require(UrlProvider::class);
             const isApplePayEnabled = <?= $urlProvider->isApplePayEnabled() ? 'true' : 'false' ?>;
             const cancelUrl = '<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')) ?>';
             const isApplePayAvailable = () => !!window.ApplePaySession?.canMakePayments();
+            const redirectToCancel = () => window.location.replace(
+                `${cancelUrl}?form_key=${encodeURIComponent(hyva.getFormKey())}`
+            );
             let isProcessing = false;
             let applePayApiLoaded;
             let btnPlaceOrder;
@@ -79,13 +82,13 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                     fetch('<?= $escaper->escapeUrl($block->getUrl("payplug_payments/applepay/getTransactionData")); ?>').then(async response => {
                                         let res = await response.json();
                                         if (res.error === true) {
-                                            window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                                            redirectToCancel();
                                             resolve();
                                         } else {
                                             session.completeMerchantValidation(res.merchand_data);
                                         }
                                     }).catch(() => {
-                                        window.location.replace(cancelUrl);
+                                        redirectToCancel();
                                         resolve();
                                     });
                                 };
@@ -118,20 +121,20 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                             "status": applePaySessionStatus
                                         });
                                         if (res.error === true) {
-                                            window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                                            redirectToCancel();
                                             resolve();
                                         } else {
                                             window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/paymentReturn')); ?>');
                                             resolve();
                                         }
                                     }).catch(() => {
-                                        window.location.replace(cancelUrl);
+                                        redirectToCancel();
                                         resolve();
                                     });
                                 };
 
                                 session.oncancel = event => {
-                                    window.location.replace('<?= $escaper->escapeUrl($block->getUrl('payplug_payments/payment/cancel')); ?>');
+                                    redirectToCancel();
                                     resolve();
                                 };
 
