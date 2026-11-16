@@ -20,6 +20,7 @@ use Payplug\Payments\ViewModel\UrlProvider;
 /** @var ViewModelRegistry $viewModels */
 
 $urlProvider = $viewModels->require(UrlProvider::class);
+$unavailableMessage = __('Apple Pay is not available on this device. Please select another payment method.');
 ?>
 <script>
     (() => {
@@ -30,41 +31,52 @@ $urlProvider = $viewModels->require(UrlProvider::class);
             const redirectToCancel = () => window.location.replace(
                 `${cancelUrl}?form_key=${encodeURIComponent(hyva.getFormKey())}`
             );
-            let isProcessing = false;
             let applePayApiLoaded;
-            let btnPlaceOrder;
+            let isSessionReady = false;
+            let isPaymentStarted = false;
+            const setPageInert = isInert => {
+                const page = document.querySelector('.page-wrapper');
+
+                if (page) {
+                    page.inert = isInert;
+                }
+            };
 
             const applePayMethod = hyvaCheckout.payment.registerMethod({
                 code: 'payplug_payments_apple_pay',
                 method: {
-                    initialize: async function () {
-                        const appleEl = document.getElementById('pp-apple-pay-payment');
-                        if (!appleEl) return;
+                    canPlaceOrder: async function() {
+                        if (!isApplePayAvailable()) {
+                            window.dispatchMessages([{
+                                type: 'error',
+                                text: '<?= $escaper->escapeJs($unavailableMessage) ?>'
+                            }], 5000);
 
-                        this.loadApplePayApi().then(async () => {
-                            if (this.checkLoadedAP()) {
-                                if (isApplePayAvailable()) {
-                                    document.querySelector('apple-pay-button').addEventListener('click', async () => {
-                                        if (isProcessing) return;
+                            throw new Error('Apple Pay not available');
+                        }
 
-                                        isProcessing = true;
+                        if (isSessionReady) {
+                            isSessionReady = false;
+                            return true;
+                        }
 
-                                        try {
-                                            this.initApplePay();
-                                            await hyvaCheckout.order.place();
-                                        } finally {
-                                            isProcessing = false;
-                                        }
-                                    });
-                                }
+                        window.dispatchMessages([{
+                            type: 'error',
+                            text: '<?= $escaper->escapeJs(
+                                __('An error occurred while getting Apple Pay details. Please try again.')
+                            ) ?>'
+                        }], 5000);
 
-                                btnPlaceOrder = document.querySelector('.btn-place-order');
+                        throw new Error('Apple Pay session not initialized');
+                    },
+                    placeOrder: async function({ fallback }) {
+                        setPageInert(true);
 
-                                if (btnPlaceOrder) {
-                                    btnPlaceOrder.disabled = true;
-                                }
-                            }
-                        });
+                        try {
+                            await fallback();
+                        } finally {
+                            setPageInert(isPaymentStarted);
+                        }
                     },
                     initApplePay: function() {
                         if (!window.ApplePaySession) {
@@ -76,6 +88,8 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                         const session = new ApplePaySession(versionNumber, sessionRequest);
 
                         hyvaCheckout.evaluation.registerExecutable('make:pay-plug:payment', () => {
+                            isPaymentStarted = true;
+                            setPageInert(true);
                             magewire.plugins.loader.start();
                             return new Promise((resolve) => {
                                 session.onvalidatemerchant = async () => {
@@ -138,9 +152,16 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                                     resolve();
                                 };
 
-                                session.begin();
+                                try {
+                                    session.begin();
+                                } catch {
+                                    redirectToCancel();
+                                    resolve();
+                                }
                             });
                         });
+
+                        isSessionReady = true;
                     },
                     getApplePayVersion: function() {
                         return ApplePaySession.supportsVersion(14) ? 14 : 3;
@@ -177,21 +198,26 @@ $urlProvider = $viewModels->require(UrlProvider::class);
                             script.src =  '<?= $escaper->escapeJs($urlProvider->getApplePaySdkUrl()) ?>';
                             script.async = true;
                             script.onload = resolve;
+                            script.onerror = resolve;
                             document.head.appendChild(script);
                         });
 
                         return applePayApiLoaded;
-                    },
-                    checkLoadedAP: function() {
-                        return document.body.contains(document.querySelector('apple-pay-button'));
-                    },
-                    uninitialize: async function () {
-                        if (!btnPlaceOrder) return;
-
-                        btnPlaceOrder.disabled = false;
                     }
                 }
             });
+
+            document.addEventListener('click', event => {
+                if (event.target.closest?.('.btn-place-order')
+                    && hyvaCheckout.config.getValue('payment.method') === applePayMethod.code
+                    && isApplePayAvailable()
+                ) {
+                    applePayMethod.initApplePay();
+                }
+            }, true);
+
+            // Drop the unused session when checkout validation fails (e.g. terms not accepted)
+            window.addEventListener('checkout:validation:failure', () => { isSessionReady = false; });
 
             if (isApplePayEnabled) {
                 applePayMethod.loadApplePayApi().then(() => {

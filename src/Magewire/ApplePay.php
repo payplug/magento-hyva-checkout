@@ -17,6 +17,8 @@ class ApplePay extends Main
         'shipping_method_selected' => 'refresh',
         'shipping_address_saved' => 'refresh',
         'shipping_address_activated' => 'refresh',
+        'billing_address_saved' => 'refresh',
+        'billing_address_activated' => 'refresh',
         'coupon_code_applied' => 'refresh',
         'coupon_code_revoked' => 'refresh',
     ];
