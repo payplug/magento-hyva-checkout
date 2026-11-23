@@ -32,9 +32,9 @@
 
             <block name="checkout.payment.method.payplug_payments_oney"
                    as="payplug_payments_oney"
-                   class="Payplug\Payments\Block\Oney\Simulation"
                    template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/oney.phtml">
                  <arguments>
+                    <argument name="method_code" xsi:type="string">payplug_payments_oney</argument>
                     <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Oney</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
@@ -52,9 +52,9 @@
 
             <block name="checkout.payment.method.payplug_payments_oney_without_fees"
                    as="payplug_payments_oney_without_fees"
-                   class="Payplug\Payments\Block\Oney\Simulation"
                    template="Payplug_PaymentsHyvaCheckout::hyva-checkout/payment/method/oney.phtml">
                 <arguments>
+                    <argument name="method_code" xsi:type="string">payplug_payments_oney_without_fees</argument>
                     <argument name="magewire" xsi:type="object">\Payplug\PaymentsHyvaCheckout\Magewire\Oney</argument>
                     <argument name="metadata" xsi:type="array">
                         <item name="icon" xsi:type="array">
