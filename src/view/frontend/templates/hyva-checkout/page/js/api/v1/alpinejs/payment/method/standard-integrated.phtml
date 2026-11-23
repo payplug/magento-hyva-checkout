@@ -174,7 +174,7 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                         });
                     },
                     validate: async function () {
-                        const cancelUrl = BASE_URL + 'payplug_payments/payment/cancel';
+                        const cancelUrl = `${BASE_URL}payplug_payments/payment/cancel?form_key=${hyva.getFormKey()}`;
                         const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
                         const returnUrl = BASE_URL + 'payplug_payments/payment/paymentReturn';
                         const activeMethod = document.querySelector('input[name="payment-method-option"]:checked')?.value || '';
@@ -210,11 +210,11 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
                                         await validateForm();
 
                                         const response = await fetch(`${redirectUrl}?should_redirect=0&has_payment_form=1`);
-                                        const { payment_id, error, message } = await response.json();
+                                        const { payment_id, error, message, url } = await response.json();
 
                                         if (error) {
                                             window.dispatchMessages([{ type: 'error', text: message }], 2000);
-                                            window.location.replace(cancelUrl);
+                                            window.location.replace(url || cancelUrl);
                                             return;
                                         }
 
@@ -261,7 +261,7 @@ $integratedPaymentUrl = $urlProvider->getPayplugIntegratedPaymentJsUrl() . '.js'
 
                             if (paymentOptions.isPopup) {
                                 function redirectToCancelUrl() {
-                                    window.location.replace(`${cancelUrl}?form_key=${hyva.getFormKey()}`);
+                                    window.location.replace(cancelUrl);
                                 }
 
                                 Payplug.Form._closeIframe = () => {

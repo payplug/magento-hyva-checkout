@@ -335,7 +335,7 @@ $hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
                         return state === 'valid';
                     },
                     validate: async function() {
-                        const cancelUrl = BASE_URL + 'payplug_payments/payment/cancel';
+                        const cancelUrl = `${BASE_URL}payplug_payments/payment/cancel?form_key=${hyva.getFormKey()}`;
                         const returnUrl = BASE_URL + 'payplug_payments/payment/paymentReturn';
                         const redirectUrl = BASE_URL + 'payplug_payments/payment/standard';
 
@@ -399,7 +399,7 @@ $hostedFieldsPaymentUrl = $urlProvider->getPayplugHostedFieldsJsUrl() . '.js';
 
                                 if (error) {
                                     window.dispatchMessages([{ type: 'error', text: message }], 2000);
-                                    window.location.replace(cancelUrl);
+                                    window.location.replace(url || cancelUrl);
                                     return;
                                 }
 
